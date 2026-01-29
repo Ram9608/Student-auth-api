@@ -1,81 +1,130 @@
-# Student Authentication API
+# 🎓 Student Authentication & Dashboard System
 
-A production-ready, high-performance RESTful API built with **FastAPI** designed to handle secure user authentication and management for student platforms. This system implements state-of-the-art security practices including stateless JWT authentication, bcrypt password hashing, and role-based access control.
-
-## 🚀 Key Features
-
-*   **Robust Authentication**: Secure registration and login workflows returning JSON Web Tokens (JWT).
-*   **Stateless Security**: Fully stateless architecture using `HS256` signed tokens for scalable deployments.
-*   **Role-Based Access Control**: Foundations laid for differentiating between students, admins, and other roles.
-*   **Password Management**: Secure password hashing with `bcrypt` and a dedicated Forgot/Reset password flow.
-*   **Production Standards**: Built with modern best practices, including input validation (Pydantic), ORM integration (SQLAlchemy), and clean architectural patterns.
-*   **Interactive Documentation**: Automatic, interactive API docs generated via Swagger UI and ReDoc.
-
-## 🛠️ Technology Stack
-
-*   **Framework**: [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework for building APIs.
-*   **Database**: SQLite (Development) / Scalable to PostgreSQL (Production) using SQLAlchemy ORM.
-*   **Validation**: [Pydantic v2](https://docs.pydantic.dev/) - Data validation and settings management using Python type hints.
-*   **Security**:
-    *   `Passlib` for Bcrypt password hashing.
-    *   `PyJWT` for token generation and decoding.
-    *   OAuth2 Password Bearer flow.
-
-## ⚡ Getting Started
-
-### Prerequisites
-
-*   Python 3.9 or higher
-
-### Installation
-
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/Ram9608/Student-auth-api.git
-    cd Student-auth-api
-    ```
-
-2.  **Install dependencies**
-    It is recommended to use a virtual environment.
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **Run the application**
-    ```bash
-    uvicorn main:app --reload
-    ```
-    The server will start at `http://localhost:8000`.
-
-## 📖 API Documentation
-
-Once the server is running, you can access the interactive API specifications:
-
-*   **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs) - Test endpoints directly from your browser.
-*   **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc) - Alternative documentation view.
-
-### Core Endpoints
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/v1/auth/register` | Register a new student account. |
-| `POST` | `/api/v1/auth/login` | Authenticate and retrieve an access token. |
-| `POST` | `/api/v1/auth/forgot-password` | Request a password reset link. |
-| `POST` | `/api/v1/auth/reset-password` | Reset password using a valid token. |
-| `GET` | `/api/v1/student/profile` | **[Protected]** Retrieve profile of the logged-in student. |
-
-## 🧪 Testing
-
-To test the **Protected Route** in Swagger UI:
-1.  Login via `/api/v1/auth/login` to get an `access_token`.
-2.  Click the **Authorize** 🔒 button at the top right.
-3.  Paste the token value.
-4.  Execute the protected endpoints.
-
-## 🤝 Contribution
-
-Contributions are welcome! Please feel free to verify the code and submit a Pull Request.
+A complete **Full-Stack Application** featuring a production-ready **FastAPI** backend and a modern **React (Vite)** frontend. This project implements secure user authentication including Login, Registration, Password Reset, and a protected Dashboard with role-based access control.
 
 ---
 
-**Developed by Ram Sahu**
+## 🌟 Key Features
+
+### 🔐 Robust Backend (FastAPI)
+*   **Secure Authentication**: Implements **JWT (JSON Web Tokens)** for stateless and secure session management.
+*   **Password Security**: Uses **Bcrypt** hashing to ensure password safety at rest.
+*   **Validation**: Powered by **Pydantic v2** for strict data validation and type checking.
+*   **Database**: Built with **SQLAlchemy** (ORM), currently configured with SQLite for development (easily scalable to PostgreSQL).
+*   **API Documentation**: Automatic interactive documentation via Swagger UI.
+
+### 💻 Modern Frontend (React + Vite)
+*   **Responsive Design**: A sleek, glassmorphism-inspired UI powered by simple CSS and **Framer Motion** for animations.
+*   **Context API**: Robust state management for Authentication (`AuthContext`).
+*   **Protected Routes**: Security wrappers to prevent unauthorized access to private pages like the Dashboard.
+*   **Instant Feedback**: Integrated `react-hot-toast` for real-time user notifications.
+
+---
+
+## 🛠️ Technology Stack
+
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Backend** | Python 3.10+ | Core programming language |
+| **Framework** | FastAPI | High-performance async web framework |
+| **Frontend** | React (Vite) | Fast, modern frontend library |
+| **Database** | SQLite / SQLAlchemy | Relational database management |
+| **Security** | PyJWT & Passlib | Token handling and password hashing |
+| **Styling** | Vanilla CSS + Lucide | Custom glassmorphism styles and icons |
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to set up the project locally.
+
+### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/Ram9608/Student-auth-api.git
+cd Student-auth-api
+```
+
+### 2️⃣ Backend Setup
+Create a virtual environment and install dependencies.
+
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate (Windows)
+.\venv\Scripts\activate
+
+# Activate (Mac/Linux)
+source venv/bin/activate
+
+# Install requirements
+pip install -r requirements.txt
+```
+
+Start the Backend Server:
+```bash
+python -m uvicorn main:app --reload
+```
+*   The API will start at `http://127.0.0.1:8000`.
+*   **Docs**: Visit `http://127.0.0.1:8000/docs`.
+
+### 3️⃣ Frontend Setup (Optional for Dev)
+The frontend is already pre-built and served by FastAPI in this repository. However, if you want to modify the UI:
+
+```bash
+cd react_frontend
+npm install
+npm run dev
+```
+
+---
+
+## 📂 Project Structure
+
+```bash
+Student-auth-api/
+├── main.py              # Application entry point & API routes
+├── models.py            # Database models (SQLAlchemy)
+├── schemas.py           # Pydantic data schemas
+├── security.py          # JWT & Hash utilities
+├── database.py          # Database connection
+├── react_frontend/      # React Source Code
+│   ├── src/
+│   │   ├── components/  # Reusable UI components
+│   │   ├── context/     # Auth Context Provider
+│   │   ├── pages/       # Login, Register, Dashboard
+│   │   └── api.ts       # Axios instance
+│   └── dist/            # Production build assets (Served by FastAPI)
+└── auth.db              # Local Database file
+```
+
+---
+
+## 🔗 API Endpoints
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| **POST** | `/api/v1/auth/register` | Create a new student account |
+| **POST** | `/api/v1/auth/login` | Login and receive JWT Token |
+| **POST** | `/api/v1/auth/forgot-password` | Request password reset token |
+| **GET** | `/api/v1/student/profile` | **[Protected]** Get user profile data |
+
+---
+
+## 🤝 Contribution
+
+Contributions are welcome! If you'd like to improve the UI or add features:
+1.  Fork the repository.
+2.  Create a new branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes.
+4.  Push to the branch.
+5.  Open a Pull Request.
+
+---
+
+### 👨‍💻 Developed by Ram Sahu
+A passion project demonstrating modern Authentication flows with FastAPI and React.
+
+```python
+print("Happy Coding! 🚀")
+```
