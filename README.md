@@ -122,7 +122,7 @@ Contributions are welcome! If you'd like to improve the UI or add features:
 
 ---
 
-### 👨‍💻 Developed by Ram Sahu
+### 👨‍💻 Developed by Ram Bhajan Sahu
 A passion project demonstrating modern Authentication flows with FastAPI and React.
 
 ```python
