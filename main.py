@@ -11,7 +11,7 @@ from jwt.exceptions import InvalidTokenError
 import os
 
 # Import local modules
-from database import engine, get_db, Base
+from database import SessionLocal, engine, get_db, Base
 from models import User
 from schemas import UserCreate, UserResponse, Token, PasswordResetRequest, PasswordReset
 from security import (
@@ -22,6 +22,7 @@ from security import (
     ALGORITHM,
     ACCESS_TOKEN_EXPIRE_MINUTES,
 )
+from email_utils import send_password_reset_email, send_welcome_email
 
 # Initialize Database Tables
 Base.metadata.create_all(bind=engine)
@@ -149,18 +150,31 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 @app.post("/api/v1/auth/forgot-password", tags=["Auth"])
 def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == request.email).first()
+    
     if user:
         reset_token = create_access_token(
             data={"sub": str(user.id), "type": "reset"},
             expires_delta=timedelta(minutes=15)
         )
         reset_link = f"http://localhost:8000/reset-password?token={reset_token}"
-        print(f"RESET LINK: {reset_link}") 
-
-    return {"message": "If this email is registered, you will receive a password reset link."}
+        
+        # Send email
+        email_sent = send_password_reset_email(user.email, reset_link)
+        
+        if email_sent:
+            print(f"✅ Password reset email sent to: {user.email}")
+        else:
+            print(f"⚠️  Email sending failed. Reset link: {reset_link}")
+    
+    # Always return same message for security (prevent email enumeration)
+    return {
+        "message": "If this email is registered, you will receive a password reset link.",
+        "success": True
+    }
 
 @app.post("/api/v1/auth/reset-password", tags=["Auth"])
 def reset_password(reset_data: PasswordReset, db: Session = Depends(get_db)):

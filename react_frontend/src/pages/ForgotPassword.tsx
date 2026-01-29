@@ -1,32 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Mail } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import api from '../api';
 
-const Login = () => {
+const ForgotPassword = () => {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { login, isAuthenticated } = useAuth();
     const navigate = useNavigate();
-
-    // Redirect when authenticated
-    useEffect(() => {
-        if (isAuthenticated) {
-            navigate('/dashboard');
-        }
-    }, [isAuthenticated, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+
         try {
-            await login(email, password);
-            toast.success('Welcome back!');
+            const response = await api.post('/auth/forgot-password', { email });
+            toast.success('Password reset link sent to your email! Check your inbox.');
+            setTimeout(() => navigate('/login'), 3000);
         } catch (error: any) {
-            toast.error(error.message || 'Login failed');
+            toast.error(error.response?.data?.detail || 'Failed to send reset link');
+        } finally {
             setIsLoading(false);
         }
     };
@@ -40,8 +34,8 @@ const Login = () => {
                 style={{ width: '100%', maxWidth: '450px' }}
             >
                 <div className="text-center" style={{ marginBottom: '2rem' }}>
-                    <h2>Welcome Back</h2>
-                    <p>Please sign in to continue</p>
+                    <h2>Forgot Password?</h2>
+                    <p>Enter your email to receive a password reset link</p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -61,36 +55,14 @@ const Login = () => {
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Password</label>
-                        <div style={{ position: 'relative' }}>
-                            <Lock style={{ position: 'absolute', left: '14px', top: '14px', color: 'var(--text-secondary)' }} size={20} />
-                            <input
-                                type="password"
-                                className="glass-input"
-                                style={{ paddingLeft: '45px' }}
-                                placeholder="••••••••"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                        </div>
-                    </div>
-
                     <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }} disabled={isLoading}>
-                        {isLoading ? <div className="spinner"></div> : <>Sign In <LogIn size={20} /></>}
+                        {isLoading ? <div className="spinner"></div> : 'Send Reset Link'}
                     </button>
                 </form>
 
-                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                    <Link to="/forgot-password" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textDecoration: 'none' }}>
-                        Forgot your password?
-                    </Link>
-                </div>
-
                 <div style={{ textAlign: 'center', marginTop: '2rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
                     <p style={{ fontSize: '0.9rem' }}>
-                        Don't have an account? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 500 }}>Create one</Link>
+                        Remember your password? <a href="/login" style={{ color: 'var(--primary)', fontWeight: 500 }}>Sign In</a>
                     </p>
                 </div>
             </motion.div>
@@ -98,4 +70,4 @@ const Login = () => {
     );
 };
 
-export default Login;
+export default ForgotPassword;
