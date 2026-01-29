@@ -1,10 +1,14 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import timedelta
 import jwt
 from jwt.exceptions import InvalidTokenError
+import os
 
 # Import local modules
 from database import engine, get_db, Base
@@ -24,6 +28,19 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Student Auth API")
 
+# CORS Setup
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount Frontend Build (SPA)
+# Mount assets first so they don't get caught by the catch-all
+app.mount("/assets", StaticFiles(directory="react_frontend/dist/assets"), name="assets")
+
 # OAuth2 Scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -39,30 +56,52 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-        # In a real app, you might also check 'exp' here, but PyJWT checks it automatically.
-    except InvalidTokenError:
-        raise credentials_exception
+        user_id_str = payload.get("sub")
+        if user_id_str is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token missing 'sub' claim",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        user_id = int(user_id_str)
+    except InvalidTokenError as e:
+        print(f"Token validation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Token validation error: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except ValueError as e:
+        print("Token 'sub' claim is not an integer")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Value error: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail=f"User not found for id: {user_id}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return user
 
 # ------------------------------------------------------------------------------
-# Root Endpoint
+# API Auth Routes
 # ------------------------------------------------------------------------------
-@app.get("/", tags=["Root"])
-def read_root():
-    return {"message": "Welcome to the Auth API!"}
 
-# ------------------------------------------------------------------------------
-# Auth Routes
-# ------------------------------------------------------------------------------
+@app.get("/api/v1/health", tags=["System"])
+def health_check(db: Session = Depends(get_db)):
+    try:
+        # Pinging database
+        db.execute("SELECT 1")
+        return {"status": "online", "database": "connected"}
+    except Exception as e:
+        return {"status": "offline", "database": str(e)}
 
 @app.post("/api/v1/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED, tags=["Auth"])
 def register(user: UserCreate, db: Session = Depends(get_db)):
@@ -103,10 +142,9 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         raise HTTPException(status_code=400, detail="Inactive user")
 
     # Create token
-    # Payload requirements: sub (user id), email, role, iat, exp
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.id, "email": user.email, "role": user.role},
+        data={"sub": str(user.id), "email": user.email, "role": user.role},
         expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
@@ -114,21 +152,13 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 @app.post("/api/v1/auth/forgot-password", tags=["Auth"])
 def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == request.email).first()
-    if not user:
-        # Avoid user enumeration by returning success even if email not found, 
-        # or return 404 if less strict security is needed. Request implies return success message.
-        # "Return success message" is requested.
-        pass 
-    else:
-        # Generate reset token (short lived)
-        # We can reuse create_access_token or make a specific one.
-        # Using a 15 min expiry for reset token.
+    if user:
         reset_token = create_access_token(
-            data={"sub": user.id, "type": "reset"},
+            data={"sub": str(user.id), "type": "reset"},
             expires_delta=timedelta(minutes=15)
         )
         reset_link = f"http://localhost:8000/reset-password?token={reset_token}"
-        print(f"RESET LINK: {reset_link}") # Print to console as requested
+        print(f"RESET LINK: {reset_link}") 
 
     return {"message": "If this email is registered, you will receive a password reset link."}
 
@@ -147,24 +177,35 @@ def reset_password(reset_data: PasswordReset, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Update password
     user.hashed_password = get_password_hash(reset_data.new_password)
-    
-    # Invalidate existing sessions
-    # Logic to invalidate sessions typically involves a token blacklist or versioning.
-    # The prompt asks to "Invalidate existing sessions (simulate token invalidation)".
-    # A simple way is to print "Sessions invalidated" or just relying on password change.
-    # Real "invalidation" in stateless JWT requires changing a secret or user 'token_version'.
-    # I will stick to updating the password.
-    
     db.commit()
     
     return {"message": "Password reset successfully"}
 
 # ------------------------------------------------------------------------------
-# Protected Routes
+# API Protected Routes
 # ------------------------------------------------------------------------------
 
 @app.get("/api/v1/student/profile", response_model=UserResponse, tags=["Student"])
 def get_student_profile(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+# ------------------------------------------------------------------------------
+# SPA Catch-All Route (Must be last)
+# ------------------------------------------------------------------------------
+
+@app.get("/{full_path:path}", response_class=HTMLResponse, tags=["Frontend"])
+async def catch_all(full_path: str, request: Request):
+    # Determine the file path
+    dist_dir = "react_frontend/dist"
+    
+    # Check if the file exists in dist (e.g. valid static file that wasn't /assets)
+    # This might handle images in public/ or similar if built differently.
+    # But Vite usually puts assets in /assets. 
+    # For robust SPA, we just return index.html for non-api routes.
+    
+    if full_path.startswith("api"):
+        raise HTTPException(status_code=404, detail="API endpoint not found")
+
+    return FileResponse(os.path.join(dist_dir, "index.html"))

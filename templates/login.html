@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Student Auth{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="glass-panel auth-card">
+        <div class="text-center" style="text-align: center; margin-bottom: 2rem;">
+            <h2>Welcome Back</h2>
+            <p>Please sign in to continue</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <div style="position: relative;">
+                    <i class="ri-mail-line"
+                        style="position: absolute; left: 14px; top: 14px; color: var(--text-secondary);"></i>
+                    <input type="email" id="email" class="glass-input" style="padding-left: 45px;"
+                        placeholder="name@example.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <div style="position: relative;">
+                    <i class="ri-lock-line"
+                        style="position: absolute; left: 14px; top: 14px; color: var(--text-secondary);"></i>
+                    <input type="password" id="password" class="glass-input" style="padding-left: 45px;"
+                        placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                Sign In <i class="ri-login-circle-line"></i>
+            </button>
+        </form>
+
+        <div
+            style="text-align: center; margin-top: 2rem; border-top: 1px solid var(--card-border); padding-top: 1.5rem;">
+            <p style="font-size: 0.9rem;">
+                Don't have an account? <a href="/register" style="color: var(--primary); font-weight: 500;">Create
+                    one</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
