@@ -50,7 +50,14 @@ git clone https://github.com/Ram9608/Student-auth-api.git
 cd Student-auth-api
 ```
 
-### 2️⃣ Backend Setup
+### ⚡ One-Click Start (Windows)
+We have included a script to start both Backend and Frontend automatically!
+1. Double-click **`start_app.bat`** in the root directory.
+2. That's it! Two windows will open (Backend & Frontend).
+
+---
+
+### 2️⃣ Manual Backend Setup
 
 #### Create Virtual Environment
 ```bash
@@ -60,45 +67,36 @@ python -m venv venv
 # Activate (Windows)
 .\venv\Scripts\activate
 
-# Activate (Mac/Linux)
-source venv/bin/activate
-
 # Install requirements
+# Note: We use a specific bcrypt version for compatibility
 pip install -r requirements.txt
 ```
 
 #### Configure Environment Variables
 Create a `.env` file in the root directory (see `.env.example` for reference):
-
 ```env
 # Email Configuration (Gmail SMTP)
 SENDER_EMAIL=your-email@gmail.com
 SENDER_PASSWORD=your-app-specific-password
+FRONTEND_URL=http://localhost:5173
 
 # JWT Secret Key
 SECRET_KEY=your-super-secret-key-here
 ```
 
-> **Note**: For Gmail SMTP, you need to generate an **App Password**. See [EMAIL_SETUP.md](EMAIL_SETUP.md) for detailed instructions.
-
 #### Start the Backend Server
 ```bash
 python -m uvicorn main:app --reload
 ```
-*   The API will start at `http://127.0.0.1:8000`.
-*   **Interactive API Docs**: Visit `http://127.0.0.1:8000/docs`.
-*   **Alternative Docs**: Visit `http://127.0.0.1:8000/redoc`.
 
-### 3️⃣ Frontend Setup (Optional for Development)
-The frontend is already pre-built and served by FastAPI. However, if you want to modify the UI:
-
+### 3️⃣ Frontend Setup
 ```bash
 cd react_frontend
 npm install
 npm run dev
 ```
 
-To build the frontend for production:
+To build for production:
 ```bash
 npm run build
 ```

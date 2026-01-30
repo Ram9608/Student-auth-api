@@ -1,3 +1,9 @@
+import os
+from dotenv import load_dotenv
+
+# Load environment variables FIRST
+load_dotenv()
+
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
@@ -8,7 +14,6 @@ from typing import Optional
 from datetime import timedelta
 import jwt
 from jwt.exceptions import InvalidTokenError
-import os
 
 # Import local modules
 from database import SessionLocal, engine, get_db, Base
@@ -106,49 +111,63 @@ def health_check(db: Session = Depends(get_db)):
 
 @app.post("/api/v1/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED, tags=["Auth"])
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    # Check if email exists
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # Hash password
-    hashed_pwd = get_password_hash(user.password)
-    
-    # Create user
-    new_user = User(
-        first_name=user.first_name,
-        last_name=user.last_name,
-        email=user.email,
-        phone=user.phone,
-        hashed_password=hashed_pwd,
-        role="student" # Default role
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+    try:
+        # Check if email exists
+        db_user = db.query(User).filter(User.email == user.email).first()
+        if db_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Hash password
+        hashed_pwd = get_password_hash(user.password)
+        
+        # Create user
+        new_user = User(
+            first_name=user.first_name,
+            last_name=user.last_name,
+            email=user.email,
+            phone=user.phone,
+            hashed_password=hashed_pwd,
+            role="student" # Default role
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return new_user
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Registration Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 @app.post("/api/v1/auth/login", response_model=Token, tags=["Auth"])
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # Fetch user
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+    try:
+        # Fetch user
+        user = db.query(User).filter(User.email == form_data.username).first()
+        if not user or not verify_password(form_data.password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        if not user.is_active:
+            raise HTTPException(status_code=400, detail="Inactive user")
 
-    # Create token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email, "role": user.role},
-        expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+        # Create token
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user.id), "email": user.email, "role": user.role},
+            expires_delta=access_token_expires
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Login Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
 
 
 @app.post("/api/v1/auth/forgot-password", tags=["Auth"])
@@ -160,7 +179,8 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)
             data={"sub": str(user.id), "type": "reset"},
             expires_delta=timedelta(minutes=15)
         )
-        reset_link = f"http://localhost:8000/reset-password?token={reset_token}"
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        reset_link = f"{frontend_url}/reset-password?token={reset_token}"
         
         # Send email
         email_sent = send_password_reset_email(user.email, reset_link)
@@ -178,14 +198,24 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)
 
 @app.post("/api/v1/auth/reset-password", tags=["Auth"])
 def reset_password(reset_data: PasswordReset, db: Session = Depends(get_db)):
+    print(f"DEBUG: Resetting password with token: {reset_data.token[:20]}...")
     try:
-        payload = jwt.decode(reset_data.token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
-        token_type: str = payload.get("type")
+        # Add leeway for small clock differences
+        payload = jwt.decode(reset_data.token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_exp": True}, leeway=10)
+        user_id = payload.get("sub")
+        token_type = payload.get("type")
+        
+        print(f"DEBUG: Token payload: {payload}")
+        
         if user_id is None or token_type != "reset":
-            raise HTTPException(status_code=400, detail="Invalid token")
-    except InvalidTokenError:
-        raise HTTPException(status_code=400, detail="Invalid token")
+            print("DEBUG: Invalid sub or type")
+            raise HTTPException(status_code=400, detail="Invalid token structure")
+            
+        user_id = int(user_id) # Convert to int
+            
+    except InvalidTokenError as e:
+        print(f"DEBUG: Token validation failed: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Invalid or expired token: {str(e)}")
     
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

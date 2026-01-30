@@ -3,6 +3,9 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from typing import Optional
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
