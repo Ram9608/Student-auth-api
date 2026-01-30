@@ -213,7 +213,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 👨‍💻 Developed by Ram Sahu
+## 👨‍💻 Developed by Ram Bhajan Sahu
 
 A passion project demonstrating modern Authentication flows with FastAPI and React, featuring:
 - ✅ JWT-based authentication
