@@ -10,8 +10,13 @@ load_dotenv()
 # Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SENDER_EMAIL = os.getenv("SENDER_EMAIL", "your-email@gmail.com")  # Update this
-SENDER_PASSWORD = os.getenv("SENDER_PASSWORD", "your-app-password")  # Update this
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
+
+if not SENDER_EMAIL or not SENDER_PASSWORD:
+    print("❌ ERROR: SENDER_EMAIL or SENDER_PASSWORD not set in environment or .env file.")
+else:
+    print(f"✅ Email Config Loaded: {SENDER_EMAIL} / Password Len: {len(SENDER_PASSWORD)}")
 SENDER_NAME = "Student Auth System"
 
 def send_password_reset_email(recipient_email: str, reset_link: str) -> bool:
@@ -172,6 +177,8 @@ def send_password_reset_email(recipient_email: str, reset_link: str) -> bool:
         return True
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"❌ Failed to send email to {recipient_email}: {str(e)}")
         return False
 

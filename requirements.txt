@@ -7,3 +7,6 @@ bcrypt==3.2.0
 pyjwt
 python-multipart
 python-dotenv
+scikit-learn
+pandas
+numpy

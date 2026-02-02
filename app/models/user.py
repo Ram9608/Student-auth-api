@@ -1,6 +1,8 @@
+
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.sql import func
-from database import Base
+from sqlalchemy.orm import relationship
+from app.core.database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -14,3 +16,9 @@ class User(Base):
     role = Column(String, default="student")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    student_profile = relationship("StudentProfile", back_populates="user", uselist=False)
+    posted_jobs = relationship("Job", back_populates="teacher")
+
+    last_reset_at = Column(DateTime(timezone=True), nullable=True)
+

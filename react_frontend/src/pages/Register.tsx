@@ -11,14 +11,15 @@ const Register = () => {
         last_name: '',
         email: '',
         phone: '',
-        password: ''
+        password: '',
+        role: 'student'
     });
     const [isLoading, setIsLoading] = useState(false);
     const { register } = useAuth();
     const navigate = useNavigate();
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.id]: e.target.value });
+    const handleChange = (e: any) => {
+        setFormData({ ...formData, [e.target.id || e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -78,6 +79,20 @@ const Register = () => {
                             <Mail style={{ position: 'absolute', left: '14px', top: '14px', color: 'var(--text-secondary)' }} size={20} />
                             <input type="email" id="email" className="glass-input" style={{ paddingLeft: '45px' }} placeholder="name@university.edu" required onChange={handleChange} />
                         </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">I am a</label>
+                        <select
+                            name="role"
+                            value={formData.role}
+                            onChange={handleChange}
+                            className="glass-input"
+                            style={{ width: '100%', padding: '12px 1rem' }}
+                        >
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                        </select>
                     </div>
 
                     <div className="form-group">
