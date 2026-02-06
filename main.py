@@ -9,7 +9,18 @@ from sqlalchemy import text # Use text for SQL execution safety
 
 from app.core.config import settings
 from app.core.database import engine, Base, get_db
-from app.routers import auth_router, users_router, teacher_router, jobs_router, resume_router, chatbot_router
+from app.routers import (
+    auth_router, users_router, teacher_router, jobs_router, 
+    resume_router, chatbot_router
+)
+# Enhanced feature routers
+try:
+    from app.routers import student_enhanced, teacher_enhanced, chatbot_enhanced
+    ENHANCED_FEATURES_ENABLED = True
+except ImportError:
+    ENHANCED_FEATURES_ENABLED = False
+    print("Enhanced features not yet migrated. Run database migrations first.")
+
 # Import models to ensure they are registered with Base
 from app.models import User 
 
@@ -37,13 +48,20 @@ if not os.path.exists("uploads"):
     os.makedirs("uploads")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# Include Routers
+# Include Core Routers
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(teacher_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(resume_router, prefix="/api/v1")
 app.include_router(chatbot_router, prefix="/api/v1")
+
+# Include Enhanced Feature Routers (if available)
+if ENHANCED_FEATURES_ENABLED:
+    app.include_router(student_enhanced.router, prefix="/api/v1")
+    app.include_router(teacher_enhanced.router, prefix="/api/v1")
+    app.include_router(chatbot_enhanced.router, prefix="/api/v1")
+    print("✅ Enhanced features loaded successfully")
 
 @app.get("/api/v1/health", tags=["System"])
 def health_check(db: Session = Depends(get_db)):

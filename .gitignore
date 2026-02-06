@@ -71,3 +71,17 @@ migrate_db.py
 check_db.py
 check_paths.py
 database_setup_temp.py
+
+# QA & Internal Testing Files
+qa_comprehensive_test_suite.py
+test_report_*.json
+QA_*.md
+MANUAL_TESTING_GUIDE.md
+APPLICATION_DEBUG_GUIDE.md
+APPLY_NOW_FIX.md
+FRONTEND_*.md
+CURRENT_STATUS.md
+
+# Artifacts & Recordings
+artifacts/
+*.webp

@@ -13,6 +13,7 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
 # Students and Teachers can view jobs
 @router.get("/", response_model=List[JobResponse])
+@router.get("", response_model=List[JobResponse])  # Also handle without trailing slash
 def get_all_jobs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return crud_job.get_jobs(db, skip, limit)
 
@@ -29,5 +30,11 @@ def apply_to_job(job_id: int, current_user: User = Depends(get_current_user), db
     if current_user.role != 'student':
         raise HTTPException(status_code=400, detail="Only students can apply for jobs")
     
+    print(f"DEBUG: Student {current_user.id} ({current_user.email}) applying to job {job_id}")
+    
     from app.crud.application import apply_to_job as crud_apply
-    return crud_apply(db, job_id, current_user.id)
+    result = crud_apply(db, job_id, current_user.id)
+    
+    print(f"DEBUG: Application created/returned: ID={result.id}, Job={result.job_id}, Student={result.student_id}")
+    
+    return result

@@ -182,6 +182,39 @@ const StudentDashboard = () => {
         }
     };
 
+    const handleApplyJob = async (jobId: number, jobTitle: string) => {
+        try {
+            // Check if resume is uploaded
+            if (!profile?.resume_path && !profileForm.resume_path) {
+                toast.error('Please upload your resume before applying!');
+                setActiveTab('profile');
+                return;
+            }
+
+            // Check if profile is complete
+            if (!profile?.skills || profile.skills.length === 0) {
+                toast.error('Please complete your profile with skills before applying!');
+                setActiveTab('profile');
+                return;
+            }
+
+            const res = await api.post(`/jobs/${jobId}/apply`);
+            toast.success(`Successfully applied to ${jobTitle}! 🎉`);
+
+            // Show match score if available
+            if (res.data?.match_score) {
+                toast.success(`Your match score: ${res.data.match_score}%`, { duration: 4000 });
+            }
+        } catch (err: any) {
+            const errorMsg = err.response?.data?.detail || 'Failed to apply';
+            if (errorMsg.includes('already applied')) {
+                toast.error('You have already applied to this job');
+            } else {
+                toast.error(errorMsg);
+            }
+        }
+    };
+
     const addListItem = (field: string, defaultValue: any) => {
         setProfileForm({
             ...profileForm,
@@ -531,6 +564,7 @@ const StudentDashboard = () => {
                                 recommended
                                 onAnalyze={() => handleAnalyzeFit(job.id)}
                                 analyzing={analyzingJobId === job.id}
+                                onApply={() => handleApplyJob(job.id, job.title)}
                             />
                         ))
                     )}
@@ -545,6 +579,7 @@ const StudentDashboard = () => {
                             job={job}
                             onAnalyze={() => handleAnalyzeFit(job.id)}
                             analyzing={analyzingJobId === job.id}
+                            onApply={() => handleApplyJob(job.id, job.title)}
                         />
                     ))}
                 </div>
@@ -649,7 +684,7 @@ const StudentDashboard = () => {
     );
 };
 
-const JobCard = ({ job, recommended, onAnalyze, analyzing }: { job: Job, recommended?: boolean, onAnalyze: () => void, analyzing: boolean }) => (
+const JobCard = ({ job, recommended, onAnalyze, analyzing, onApply }: { job: Job, recommended?: boolean, onAnalyze: () => void, analyzing: boolean, onApply: () => void }) => (
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -686,7 +721,13 @@ const JobCard = ({ job, recommended, onAnalyze, analyzing }: { job: Job, recomme
                     {analyzing ? <div className="spinner" style={{ width: 14, height: 14 }}></div> : <Star size={14} />}
                     {analyzing ? 'Analyzing...' : 'Analyze Fit'}
                 </button>
-                <button className="btn btn-primary" style={{ fontSize: '0.9rem' }}>Apply Now</button>
+                <button
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.9rem' }}
+                    onClick={onApply}
+                >
+                    Apply Now
+                </button>
             </div>
         </div>
     </motion.div>

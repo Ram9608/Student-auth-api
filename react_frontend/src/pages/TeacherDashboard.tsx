@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, List, Users, ExternalLink, Download, ArrowLeft } from 'lucide-react';
+import { PlusCircle, List, Users, ExternalLink, Download, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface Job {
@@ -88,6 +88,19 @@ const TeacherDashboard = () => {
             toast.error('Failed to post job');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleStatusUpdate = async (applicationId: number, newStatus: string) => {
+        try {
+            await api.patch(`/teacher/applications/${applicationId}/status?status=${newStatus}`);
+            toast.success(`Application ${newStatus} successfully!`);
+            // Refresh applications list
+            if (selectedJob) {
+                fetchApplications(selectedJob);
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || `Failed to ${newStatus} application`);
         }
     };
 
@@ -254,6 +267,7 @@ const TeacherDashboard = () => {
                                             <th style={{ textAlign: 'left', padding: '12px' }}>Student Name</th>
                                             <th style={{ textAlign: 'left', padding: '12px' }}>Email</th>
                                             <th style={{ textAlign: 'left', padding: '12px' }}>Applied Date</th>
+                                            <th style={{ textAlign: 'left', padding: '12px' }}>Status</th>
                                             <th style={{ textAlign: 'right', padding: '12px' }}>Actions</th>
                                         </tr>
                                     </thead>
@@ -263,19 +277,67 @@ const TeacherDashboard = () => {
                                                 <td style={{ padding: '12px' }}>{app.student_name}</td>
                                                 <td style={{ padding: '12px' }}>{app.student_email}</td>
                                                 <td style={{ padding: '12px' }}>{new Date(app.applied_at).toLocaleDateString()}</td>
-                                                <td style={{ padding: '12px', textAlign: 'right' }}>
-                                                    {app.resume_path ? (
+                                                <td style={{ padding: '12px' }}>
+                                                    <span style={{
+                                                        padding: '4px 12px',
+                                                        borderRadius: '12px',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: 600,
+                                                        background:
+                                                            app.status === 'shortlisted' ? 'rgba(16, 185, 129, 0.2)' :
+                                                                app.status === 'rejected' ? 'rgba(239, 68, 68, 0.2)' :
+                                                                    app.status === 'viewed' ? 'rgba(59, 130, 246, 0.2)' :
+                                                                        'rgba(251, 191, 36, 0.2)',
+                                                        color:
+                                                            app.status === 'shortlisted' ? '#10b981' :
+                                                                app.status === 'rejected' ? '#ef4444' :
+                                                                    app.status === 'viewed' ? '#3b82f6' :
+                                                                        '#fbbf24'
+                                                    }}>
+                                                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '12px', textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                                    {app.resume_path && (
                                                         <a
                                                             href={`http://127.0.0.1:8000${app.resume_path}`}
                                                             target="_blank"
                                                             rel="noreferrer"
-                                                            className="btn btn-primary"
-                                                            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                                                            className="btn btn-secondary"
+                                                            style={{ fontSize: '0.75rem', padding: '6px 10px' }}
                                                         >
                                                             <Download size={14} /> Resume
                                                         </a>
-                                                    ) : (
-                                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No Resume</span>
+                                                    )}
+                                                    {app.status !== 'shortlisted' && (
+                                                        <button
+                                                            onClick={() => handleStatusUpdate(app.id, 'shortlisted')}
+                                                            className="btn"
+                                                            style={{
+                                                                fontSize: '0.75rem',
+                                                                padding: '6px 10px',
+                                                                background: 'rgba(16, 185, 129, 0.2)',
+                                                                color: '#10b981',
+                                                                border: '1px solid rgba(16, 185, 129, 0.3)'
+                                                            }}
+                                                        >
+                                                            <CheckCircle size={14} /> Shortlist
+                                                        </button>
+                                                    )}
+                                                    {app.status !== 'rejected' && (
+                                                        <button
+                                                            onClick={() => handleStatusUpdate(app.id, 'rejected')}
+                                                            className="btn"
+                                                            style={{
+                                                                fontSize: '0.75rem',
+                                                                padding: '6px 10px',
+                                                                background: 'rgba(239, 68, 68, 0.2)',
+                                                                color: '#ef4444',
+                                                                border: '1px solid rgba(239, 68, 68, 0.3)'
+                                                            }}
+                                                        >
+                                                            <XCircle size={14} /> Reject
+                                                        </button>
                                                     )}
                                                 </td>
                                             </tr>
