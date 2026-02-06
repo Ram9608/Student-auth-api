@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, List, Users, ExternalLink, Download, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, List, Users, Download, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface Job {

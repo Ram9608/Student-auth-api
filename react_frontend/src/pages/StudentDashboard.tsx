@@ -155,8 +155,8 @@ const StudentDashboard = () => {
 
             // 🚀 Immediate Sync: Update both profile and profileForm states
             if (res.data && res.data.resume_path) {
-                setProfile(prev => prev ? { ...prev, resume_path: res.data.resume_path } : { resume_path: res.data.resume_path });
-                setProfileForm(prev => ({ ...prev, resume_path: res.data.resume_path }));
+                setProfile((prev: any) => prev ? { ...prev, resume_path: res.data.resume_path } : { resume_path: res.data.resume_path });
+                setProfileForm((prev: any) => ({ ...prev, resume_path: res.data.resume_path }));
             }
 
             fetchProfile();
@@ -616,7 +616,7 @@ const StudentDashboard = () => {
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                                 <div className="glass-panel" style={{ background: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.3)' }}>
-                                    <h3 style={{ color: '#4ade80', display: 'flex', items: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <h3 style={{ color: '#4ade80', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                                         <CheckCircle size={18} /> Matched
                                     </h3>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -627,7 +627,7 @@ const StudentDashboard = () => {
                                     </div>
                                 </div>
                                 <div className="glass-panel" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-                                    <h3 style={{ color: '#f87171', display: 'flex', items: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                    <h3 style={{ color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                                         <AlertCircle size={18} /> Missing
                                     </h3>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
