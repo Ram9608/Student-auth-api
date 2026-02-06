@@ -61,15 +61,12 @@ uploads/resumes/*
 .idea/
 
 # Testing
-check_skills.py
-check_jobs.py
-seed_jobs.py
-test_recs.py
-verify_all.py
-check_tokens.py
-migrate_db.py
-check_db.py
-check_paths.py
+check_*.py
+seed_*.py
+test_*.py
+verify_*.py
+migrate_*.py
+debug_*.py
 database_setup_temp.py
 
 # QA & Internal Testing Files
@@ -81,6 +78,13 @@ APPLICATION_DEBUG_GUIDE.md
 APPLY_NOW_FIX.md
 FRONTEND_*.md
 CURRENT_STATUS.md
+FULL_IMPLEMENTATION_SUMMARY.md
+IMPLEMENTATION_COMPLETE.md
+QUICK_START_ENHANCED.md
+ENHANCED_FEATURES_GUIDE.md
+EMAIL_SETUP.md
+*.db
+*.log
 
 # Artifacts & Recordings
 artifacts/
