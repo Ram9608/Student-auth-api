@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import { motion } from 'framer-motion';
-import { User, Briefcase, BookOpen, Star, MapPin, Github, Linkedin, Upload, Plus, Trash2, Globe, DollarSign } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User, Briefcase, BookOpen, Star, MapPin, Github, Linkedin, Upload, Plus, Trash2, Globe, DollarSign, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface Job {
@@ -17,7 +17,18 @@ interface Job {
     created_at: string;
 }
 
+interface AnalysisResult {
+    match_score: number;
+    matched_skills: string[];
+    missing_skills: string[];
+    explanation: string;
+    ai_improvement_suggestions: string[];
+    recommended_courses: { skill: string; course_name: string; platform: string; course_url: string; level: string; language: string }[];
+}
+
 const StudentDashboard = () => {
+    // ... (rest of the file remains unchanged until render)
+
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('recommendations');
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -25,6 +36,11 @@ const StudentDashboard = () => {
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [uploadingResume, setUploadingResume] = useState(false);
+
+    // Analysis State
+    const [analyzingJobId, setAnalyzingJobId] = useState<number | null>(null);
+    const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+    const [showAnalysisModal, setShowAnalysisModal] = useState(false);
 
     // Profile Form State
     const [profileForm, setProfileForm] = useState<any>({
@@ -149,6 +165,19 @@ const StudentDashboard = () => {
             console.error('Upload Error:', err);
         } finally {
             setUploadingResume(false);
+        }
+    };
+
+    const handleAnalyzeFit = async (jobId: number) => {
+        setAnalyzingJobId(jobId);
+        try {
+            const res = await api.post(`/resume-analyzer/analyze/${jobId}`);
+            setAnalysisResult(res.data);
+            setShowAnalysisModal(true);
+        } catch (err: any) {
+            toast.error(err.response?.data?.detail || "Analysis failed");
+        } finally {
+            setAnalyzingJobId(null);
         }
     };
 
@@ -495,7 +524,13 @@ const StudentDashboard = () => {
                         </div>
                     ) : (
                         recommendedJobs.map(job => (
-                            <JobCard key={job.id} job={job} recommended />
+                            <JobCard
+                                key={job.id}
+                                job={job}
+                                recommended
+                                onAnalyze={() => handleAnalyzeFit(job.id)}
+                                analyzing={analyzingJobId === job.id}
+                            />
                         ))
                     )}
                 </div>
@@ -504,15 +539,115 @@ const StudentDashboard = () => {
             {activeTab === 'all_jobs' && (
                 <div style={{ display: 'grid', gap: '1.5rem' }}>
                     {jobs.map(job => (
-                        <JobCard key={job.id} job={job} />
+                        <JobCard
+                            key={job.id}
+                            job={job}
+                            onAnalyze={() => handleAnalyzeFit(job.id)}
+                            analyzing={analyzingJobId === job.id}
+                        />
                     ))}
                 </div>
             )}
+
+            {/* Resume Analysis Modal */}
+            <AnimatePresence>
+                {showAnalysisModal && analysisResult && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}
+                        onClick={() => setShowAnalysisModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="glass-panel"
+                            style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', background: 'var(--background-dark)', border: '1px solid var(--primary-dark)' }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button onClick={() => setShowAnalysisModal(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                                <X size={24} />
+                            </button>
+
+                            <div className="text-center" style={{ marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'inline-block', padding: '10px 20px', borderRadius: '50px', background: `conic-gradient(var(--primary) ${analysisResult.match_score}%, transparent 0)`, marginBottom: '1rem', border: '2px solid var(--card-border)' }}>
+                                    <span style={{ fontSize: '1.8rem', fontWeight: 800 }}>{analysisResult.match_score}%</span>
+                                </div>
+                                <h2>Match Score</h2>
+                                <p>{analysisResult.explanation}</p>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div className="glass-panel" style={{ background: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.3)' }}>
+                                    <h3 style={{ color: '#4ade80', display: 'flex', items: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                        <CheckCircle size={18} /> Matched
+                                    </h3>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                        {analysisResult.matched_skills.map((s, i) => (
+                                            <span key={i} style={{ fontSize: '0.85rem', padding: '2px 8px', background: 'rgba(34, 197, 94, 0.2)', borderRadius: '4px' }}>{s}</span>
+                                        ))}
+                                        {analysisResult.matched_skills.length === 0 && <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>None</span>}
+                                    </div>
+                                </div>
+                                <div className="glass-panel" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                                    <h3 style={{ color: '#f87171', display: 'flex', items: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                        <AlertCircle size={18} /> Missing
+                                    </h3>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                        {analysisResult.missing_skills.map((s, i) => (
+                                            <span key={i} style={{ fontSize: '0.85rem', padding: '2px 8px', background: 'rgba(239, 68, 68, 0.2)', borderRadius: '4px' }}>{s}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <h3 style={{ marginBottom: '1rem' }}>💡 AI Improvement Tips</h3>
+                                <ul style={{ paddingLeft: '1.2rem', color: 'var(--text-secondary)' }}>
+                                    {analysisResult.ai_improvement_suggestions.map((tip, i) => (
+                                        <li key={i} style={{ marginBottom: '0.5rem' }}>{tip}</li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 style={{ marginBottom: '1rem' }}>📚 Recommended Actions</h3>
+                                {analysisResult.recommended_courses.map((course, i) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600 }}>{course.course_name}</div>
+                                            <div style={{ fontSize: '0.8rem', opacity: 0.7, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span>{course.platform}</span> •
+                                                <span>{course.skill}</span> •
+                                                <span style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>
+                                                    {course.language}
+                                                </span> •
+                                                <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{course.level}</span>
+                                            </div>
+                                        </div>
+                                        <a
+                                            href={course.course_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn btn-secondary"
+                                            style={{ fontSize: '0.8rem', padding: '4px 10px', textDecoration: 'none', display: 'flex', alignItems: 'center' }}
+                                        >
+                                            View
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
+
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
 
-const JobCard = ({ job, recommended }: { job: Job, recommended?: boolean }) => (
+const JobCard = ({ job, recommended, onAnalyze, analyzing }: { job: Job, recommended?: boolean, onAnalyze: () => void, analyzing: boolean }) => (
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -539,7 +674,18 @@ const JobCard = ({ job, recommended }: { job: Job, recommended?: boolean }) => (
 
         <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Exp: {job.experience_level}</span>
-            <button className="btn btn-secondary" style={{ fontSize: '0.9rem' }}>View Details</button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                    onClick={onAnalyze}
+                    disabled={analyzing}
+                >
+                    {analyzing ? <div className="spinner" style={{ width: 14, height: 14 }}></div> : <Star size={14} />}
+                    {analyzing ? 'Analyzing...' : 'Analyze Fit'}
+                </button>
+                <button className="btn btn-primary" style={{ fontSize: '0.9rem' }}>Apply Now</button>
+            </div>
         </div>
     </motion.div>
 );

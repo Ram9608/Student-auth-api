@@ -14,9 +14,9 @@ SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 
 if not SENDER_EMAIL or not SENDER_PASSWORD:
-    print("❌ ERROR: SENDER_EMAIL or SENDER_PASSWORD not set in environment or .env file.")
+    print("ERROR: SENDER_EMAIL or SENDER_PASSWORD not set in environment or .env file.")
 else:
-    print(f"✅ Email Config Loaded: {SENDER_EMAIL} / Password Len: {len(SENDER_PASSWORD)}")
+    print(f"Email Config Loaded: {SENDER_EMAIL} / Password Len: {len(SENDER_PASSWORD)}")
 SENDER_NAME = "Student Auth System"
 
 def send_password_reset_email(recipient_email: str, reset_link: str) -> bool:
@@ -108,7 +108,7 @@ def send_password_reset_email(recipient_email: str, reset_link: str) -> bool:
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>🔐 Password Reset Request</h1>
+                    <h1>Password Reset Request</h1>
                 </div>
                 <div class="content">
                     <p>Hello,</p>
@@ -120,7 +120,7 @@ def send_password_reset_email(recipient_email: str, reset_link: str) -> bool:
                     </center>
                     
                     <div class="warning">
-                        <strong>⚠️ Important:</strong>
+                        <strong>Important:</strong>
                         <ul style="margin: 10px 0; padding-left: 20px;">
                             <li>This link will expire in <strong>15 minutes</strong></li>
                             <li>If you didn't request this, please ignore this email</li>
@@ -173,13 +173,13 @@ def send_password_reset_email(recipient_email: str, reset_link: str) -> bool:
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.send_message(message)
         
-        print(f"✅ Password reset email sent to: {recipient_email}")
+        print(f"Password reset email sent to: {recipient_email}")
         return True
         
     except Exception as e:
         import traceback
         traceback.print_exc()
-        print(f"❌ Failed to send email to {recipient_email}: {str(e)}")
+        print(f"Failed to send email to {recipient_email}: {str(e)}")
         return False
 
 
@@ -215,7 +215,7 @@ def send_welcome_email(recipient_email: str, user_name: str) -> bool:
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>🎉 Welcome, {user_name}!</h1>
+                    <h1>Welcome, {user_name}!</h1>
                 </div>
                 <div class="content">
                     <p>Thank you for registering with Student Auth System.</p>
@@ -238,9 +238,9 @@ def send_welcome_email(recipient_email: str, user_name: str) -> bool:
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.send_message(message)
         
-        print(f"✅ Welcome email sent to: {recipient_email}")
+        print(f"Welcome email sent to: {recipient_email}")
         return True
         
     except Exception as e:
-        print(f"❌ Failed to send welcome email: {str(e)}")
+        print(f"Failed to send welcome email: {str(e)}")
         return False

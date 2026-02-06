@@ -83,7 +83,7 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)
         email_sent = send_password_reset_email(user.email, reset_link)
         
         if email_sent:
-            print(f"✅ Password reset email sent to: {user.email}")
+            print(f"Password reset email sent to: {user.email}")
         else:
             print(f"⚠️  Email sending failed. Reset link: {reset_link}")
     
@@ -127,7 +127,7 @@ def reset_password(reset_data: PasswordReset, db: Session = Depends(get_db)):
     db.add(new_used_token)
     
     db.commit()
-    print(f"✅ Password reset successful and token blacklisted.")
+    print(f"Password reset successful and token blacklisted.")
     return {"message": "Password reset successfully"}
 
 from app.routers.deps import get_current_user

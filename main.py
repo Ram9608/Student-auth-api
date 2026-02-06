@@ -9,7 +9,7 @@ from sqlalchemy import text # Use text for SQL execution safety
 
 from app.core.config import settings
 from app.core.database import engine, Base, get_db
-from app.routers import auth_router, users_router, teacher_router, jobs_router
+from app.routers import auth_router, users_router, teacher_router, jobs_router, resume_router
 # Import models to ensure they are registered with Base
 from app.models import User 
 
@@ -42,6 +42,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(teacher_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
+app.include_router(resume_router, prefix="/api/v1")
 
 @app.get("/api/v1/health", tags=["System"])
 def health_check(db: Session = Depends(get_db)):

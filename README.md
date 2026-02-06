@@ -13,7 +13,8 @@ A production-ready Full-Stack application featuring **JWT Authentication**, **Ro
 ### 👨‍🎓 Student Dashboard
 - **Profile Management**: Update skills, education, experience, and social links.
 - **Resume Upload**: PDF resume handling with instant dashboard sync.
-- **Smart Recommendations**: Hybrid ML-based job recommendations using **TF-IDF & Cosine Similarity**.
+- **Resume AI Analyzer**: Instant resume-to-job fit analysis using **Set Theory Logic** to identify matching and missing skills.
+- **Course Recommendations**: Intelligent **Hybrid Recommendation Engine** that suggests high-quality courses (English & Hindi) from curated sources (Udemy, Coursera) or generates smart fallback search links.
 - **Job Applications**: One-click application to posted opportunities.
 
 ### 👩‍🏫 Instructor (Teacher) Dashboard
@@ -27,7 +28,7 @@ A production-ready Full-Stack application featuring **JWT Authentication**, **Ro
 - **Framework**: FastAPI (Python 3.10+)
 - **Database**: SQLite (SQLAlchemy 2.0 ORM)
 - **Security**: JWT (python-jose), Bcrypt (passlib)
-- **ML/Logic**: Scikit-Learn (TF-IDF), Pandas
+- **Engine Logic**: Set Operations (O(1) Skill Matching), Hybrid Course Recommender
 - **Mailing**: SMTP (Gmail Integration)
 
 ### Frontend
@@ -81,7 +82,7 @@ A production-ready Full-Stack application featuring **JWT Authentication**, **Ro
 │   ├── models/         # SQLAlchemy Models
 │   ├── routers/        # API Endpoints
 │   ├── schemas/        # Pydantic validation
-│   └── services/       # ML Logic & Email services
+│   └── services/       # Resume Analyzer & Email services
 ├── react_frontend/     # React + Vite TypeScript
 │   ├── src/
 │   │   ├── components/
