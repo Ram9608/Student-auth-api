@@ -90,15 +90,9 @@ cp .env.example .env
 6. **Run database migrations**
 ```bash
 # Tables will be created automatically on first run
-# Or run: python migrate_enhanced_features.py
 ```
 
-7. **Seed demo jobs (optional)**
-```bash
-python seed_demo_jobs.py
-```
-
-8. **Start the backend server**
+7. **Start the backend server**
 ```bash
 uvicorn main:app --reload
 ```
