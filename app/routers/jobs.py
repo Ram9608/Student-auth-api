@@ -30,11 +30,27 @@ def apply_to_job(job_id: int, current_user: User = Depends(get_current_user), db
     if current_user.role != 'student':
         raise HTTPException(status_code=400, detail="Only students can apply for jobs")
     
-    print(f"DEBUG: Student {current_user.id} ({current_user.email}) applying to job {job_id}")
-    
     from app.crud.application import apply_to_job as crud_apply
     result = crud_apply(db, job_id, current_user.id)
-    
-    print(f"DEBUG: Application created/returned: ID={result.id}, Job={result.job_id}, Student={result.student_id}")
-    
     return result
+
+@router.get("/my-applications")
+def get_my_applications(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != 'student':
+        raise HTTPException(status_code=400, detail='Only students can view their applications')
+    
+    from app.models.application import JobApplication
+    applications = db.query(JobApplication).filter(JobApplication.student_id == current_user.id).all()
+    
+    results = []
+    for app_obj in applications:
+        results.append({
+            "id": app_obj.id,
+            "job_id": app_obj.job_id,
+            "job_title": app_obj.job.title,
+            "company": app_obj.job.company,
+            "status": app_obj.status,
+            "reason": app_obj.rejection_reason,
+            "applied_at": app_obj.applied_at
+        })
+    return results

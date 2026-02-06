@@ -108,6 +108,16 @@ class ResumeAnalyzerService:
             recommended_courses=courses
         )
 
+    def generate_rejection_reason(self, student_id: int, job_id: int) -> str:
+        try:
+            analysis = self.analyze(student_id, job_id)
+            if analysis.match_score < 60:
+                missing = analysis.missing_skills[:2]
+                return f"AI Feedback: Skill match score is low ({analysis.match_score}%). We are specifically looking for skills like {', '.join(missing)} which seem to be missing from your profile."
+            return "AI Feedback: While your skills are good, we had other candidates with more specific experience in the required domain."
+        except:
+            return "Unfortunately, our current requirements are not a perfect match for your profile."
+
     def _get_ai_suggestions(self, student_skills, job_skills, job_title) -> list[str]:
         # This is where the LLM Integration happens.
         # Step 6 Requirement: "Use LLM ONLY for... improvements... explanation"

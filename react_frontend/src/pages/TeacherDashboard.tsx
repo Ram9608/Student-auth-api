@@ -92,8 +92,15 @@ const TeacherDashboard = () => {
     };
 
     const handleStatusUpdate = async (applicationId: number, newStatus: string) => {
+        let reason = "";
+        if (newStatus === 'rejected') {
+            const userReason = window.prompt("Enter rejection reason (or leave blank for AI generated):");
+            if (userReason === null) return; // User cancelled
+            reason = userReason;
+        }
+
         try {
-            await api.patch(`/teacher/applications/${applicationId}/status?status=${newStatus}`);
+            await api.patch(`/teacher/applications/${applicationId}/status?status=${newStatus}&reason=${encodeURIComponent(reason)}`);
             toast.success(`Application ${newStatus} successfully!`);
             // Refresh applications list
             if (selectedJob) {

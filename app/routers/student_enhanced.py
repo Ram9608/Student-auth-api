@@ -161,6 +161,37 @@ def compare_resume_versions(
     return comparison
 
 
+@router.post("/courses/enroll")
+def enroll_course(
+    course_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Enroll in a new course from recommendations"""
+    # Check if already enrolled
+    existing = db.query(CourseProgress).filter(
+        CourseProgress.student_id == current_user.id,
+        CourseProgress.course_url == course_data['url']
+    ).first()
+    
+    if existing:
+        return {"message": "Already enrolled", "id": existing.id}
+    
+    new_progress = CourseProgress(
+        student_id=current_user.id,
+        course_name=course_data['course_name'],
+        course_url=course_data['url'],
+        platform=course_data['platform'],
+        skill=course_data['skill'],
+        status=CourseStatus.IN_PROGRESS,
+        started_at=datetime.utcnow(),
+        progress_percentage=10.0 # Initial progress
+    )
+    db.add(new_progress)
+    db.commit()
+    db.refresh(new_progress)
+    return {"message": "Enrolled successfully", "id": new_progress.id}
+
 @router.get("/courses/progress")
 def get_learning_progress(
     current_user: User = Depends(get_current_user),

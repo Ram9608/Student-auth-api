@@ -58,6 +58,7 @@ def get_job_applications(job_id: int, current_user: User = Depends(get_current_u
 def update_application_status(
     application_id: int, 
     status: str,  # 'shortlisted' or 'rejected'
+    reason: str = None, # Optional reason for status change
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
@@ -79,8 +80,15 @@ def update_application_status(
     if status not in allowed_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Allowed: {allowed_statuses}")
     
-    # Update status
+    # Update status and reason
     application.status = status
+    if not reason and status == 'rejected':
+        from app.services.resume_analyzer import ResumeAnalyzerService
+        analyzer = ResumeAnalyzerService(db)
+        reason = analyzer.generate_rejection_reason(application.student_id, application.job_id)
+        
+    if reason:
+        application.rejection_reason = reason
     db.commit()
     db.refresh(application)
     

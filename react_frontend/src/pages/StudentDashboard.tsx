@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Briefcase, BookOpen, Star, MapPin, Github, Linkedin, Upload, Plus, Trash2, Globe, DollarSign, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { User, Briefcase, BookOpen, Star, MapPin, Github, Linkedin, Upload, Plus, Trash2, Globe, DollarSign, CheckCircle, AlertCircle, X, List } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Chatbot from '../components/Chatbot';
 
@@ -38,6 +38,9 @@ const StudentDashboard = () => {
     const [loading, setLoading] = useState(false);
     const [uploadingResume, setUploadingResume] = useState(false);
 
+    const [myApplications, setMyApplications] = useState<any[]>([]);
+    const [courses, setCourses] = useState<any[]>([]);
+
     // Analysis State
     const [analyzingJobId, setAnalyzingJobId] = useState<number | null>(null);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -67,7 +70,49 @@ const StudentDashboard = () => {
         fetchProfile();
         fetchRecommendedJobs();
         fetchAllJobs();
+        fetchMyApplications();
+        fetchCourses();
     }, []);
+
+    const fetchMyApplications = async () => {
+        try {
+            const res = await api.get('/jobs/my-applications');
+            setMyApplications(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchCourses = async () => {
+        try {
+            // Check if endpoint exists
+            const res = await api.get('/student/courses/progress');
+            setCourses(res.data.courses || []);
+        } catch (err) {
+            console.log("No courses progress found");
+        }
+    };
+
+    const handleEnrollCourse = async (course: any) => {
+        try {
+            await api.post('/student/courses/enroll', course);
+            toast.success("Enrolled in course! Check 'Courses' tab.");
+            fetchCourses();
+        } catch (err) {
+            toast.error("Failed to enroll in course");
+        }
+    };
+
+    const handleCompleteCourse = async (courseId: number) => {
+        try {
+            await api.post(`/student/courses/${courseId}/complete`);
+            toast.success("Course completed! Skill added to your profile.");
+            fetchCourses();
+            fetchProfile(); // Refresh skills
+        } catch (err) {
+            toast.error("Failed to update course status");
+        }
+    };
 
     const fetchProfile = async () => {
         try {
@@ -259,6 +304,18 @@ const StudentDashboard = () => {
                     onClick={() => setActiveTab('profile')}
                 >
                     <User size={18} /> My Profile
+                </button>
+                <button
+                    className={`btn ${activeTab === 'applications' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setActiveTab('applications')}
+                >
+                    <List size={18} /> Applications
+                </button>
+                <button
+                    className={`btn ${activeTab === 'courses' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setActiveTab('courses')}
+                >
+                    <BookOpen size={18} /> Courses
                 </button>
             </div>
 
@@ -585,6 +642,91 @@ const StudentDashboard = () => {
                 </div>
             )}
 
+            {activeTab === 'applications' && (
+                <div className="glass-panel">
+                    <h2 style={{ marginBottom: '1.5rem' }}>My Applications</h2>
+                    {myApplications.length === 0 ? (
+                        <p className="text-center" style={{ padding: '2rem', color: 'var(--text-secondary)' }}>You haven't applied to any jobs yet.</p>
+                    ) : (
+                        <div className="table-responsive">
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead style={{ borderBottom: '1px solid var(--card-border)' }}>
+                                    <tr>
+                                        <th style={{ textAlign: 'left', padding: '12px' }}>Job Title</th>
+                                        <th style={{ textAlign: 'left', padding: '12px' }}>Company</th>
+                                        <th style={{ textAlign: 'left', padding: '12px' }}>Status</th>
+                                        <th style={{ textAlign: 'left', padding: '12px' }}>Applied Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {myApplications.map(app => (
+                                        <tr key={app.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <td style={{ padding: '22px 12px' }}>
+                                                <div style={{ fontWeight: 600 }}>{app.job_title}</div>
+                                                {app.reason && (
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--error)', marginTop: '4px', maxWidth: '300px', lineHeight: '1.4' }}>
+                                                        <strong>Reason:</strong> {app.reason}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '12px' }}>{app.company}</td>
+                                            <td style={{ padding: '12px' }}>
+                                                <span style={{
+                                                    padding: '4px 12px',
+                                                    borderRadius: '12px',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 600,
+                                                    background:
+                                                        app.status === 'shortlisted' ? 'rgba(16, 185, 129, 0.2)' :
+                                                            app.status === 'rejected' ? 'rgba(239, 68, 68, 0.2)' :
+                                                                'rgba(251, 191, 36, 0.2)',
+                                                    color:
+                                                        app.status === 'shortlisted' ? '#10b981' :
+                                                            app.status === 'rejected' ? '#ef4444' :
+                                                                '#fbbf24'
+                                                }}>
+                                                    {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>{new Date(app.applied_at).toLocaleDateString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {activeTab === 'courses' && (
+                <div className="glass-panel">
+                    <h2 style={{ marginBottom: '1.5rem' }}>My Courses</h2>
+                    {courses.length === 0 ? (
+                        <p className="text-center" style={{ padding: '2rem', color: 'var(--text-secondary)' }}>No courses in progress. Complete an "Analyze Fit" to see recommended courses!</p>
+                    ) : (
+                        <div style={{ display: 'grid', gap: '1rem' }}>
+                            {courses.map(course => (
+                                <div key={course.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
+                                    <div>
+                                        <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{course.course_name}</div>
+                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{course.platform} • Skill: {course.skill}</div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: course.status === 'completed' ? '#10b981' : '#fbbf24' }}>
+                                            {course.status.replace('_', ' ').toUpperCase()}
+                                        </span>
+                                        <button className="btn btn-secondary" onClick={() => window.open(course.course_url, '_blank')}>View</button>
+                                        {course.status !== 'completed' && (
+                                            <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => handleCompleteCourse(course.id)}>Complete</button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Resume Analysis Modal */}
             <AnimatePresence>
                 {showAnalysisModal && analysisResult && (
@@ -662,15 +804,27 @@ const StudentDashboard = () => {
                                                 <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{course.level}</span>
                                             </div>
                                         </div>
-                                        <a
-                                            href={course.course_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn btn-secondary"
-                                            style={{ fontSize: '0.8rem', padding: '4px 10px', textDecoration: 'none', display: 'flex', alignItems: 'center' }}
-                                        >
-                                            View
-                                        </a>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button
+                                                className="btn btn-secondary"
+                                                style={{ flex: 1, padding: '6px', fontSize: '0.8rem' }}
+                                                onClick={() => window.open(course.course_url, '_blank')}
+                                            >
+                                                View
+                                            </button>
+                                            <button
+                                                className="btn btn-primary"
+                                                style={{ flex: 1, padding: '6px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                                                onClick={() => handleEnrollCourse({
+                                                    course_name: course.course_name,
+                                                    url: course.course_url,
+                                                    platform: course.platform,
+                                                    skill: course.skill
+                                                })}
+                                            >
+                                                Start
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

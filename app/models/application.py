@@ -9,7 +9,8 @@ class JobApplication(Base):
     id = Column(Integer, primary_key=True, index=True)
     job_id = Column(Integer, ForeignKey("jobs.id"), nullable=False)
     student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    status = Column(String, default="applied") # applied, reviewed, rejected, accepted
+    status = Column(String, default="applied") # applied, reviewed, shortlisted, rejected
+    rejection_reason = Column(String, nullable=True)
     applied_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
