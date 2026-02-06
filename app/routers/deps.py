@@ -60,3 +60,7 @@ class RoleChecker:
         if user.role not in self.allowed_roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Operation not permitted")
         return user
+def get_current_teacher(user: User = Depends(get_current_user)):
+    if user.role != "teacher":
+        raise HTTPException(status_code=403, detail="Not authorized. Teacher role required.")
+    return user

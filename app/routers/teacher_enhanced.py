@@ -4,9 +4,9 @@ from typing import List, Optional
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.security import get_current_teacher
-from app.models import User, Job
-from app.models.enhanced_models import Application, ApplicationStatus, EmailNotification
+from app.routers.deps import get_current_teacher
+from app.models import User, Job, JobApplication
+from app.models.enhanced_models import ApplicationStatus, EmailNotification
 from app.services.analytics_service import TeacherAnalyticsService
 from app.schemas.enhanced_schemas import (
     TeacherAnalyticsResponse, ApplicantRankingResponse,
@@ -52,7 +52,7 @@ def get_ranked_applicants(
     # Verify job belongs to teacher
     job = db.query(Job).filter(
         Job.id == job_id,
-        Job.posted_by == current_user.id
+        Job.teacher_id == current_user.id
     ).first()
     
     if not job:
@@ -76,15 +76,15 @@ def update_application_status(
     db: Session = Depends(get_db)
 ):
     """Update application status and send notification"""
-    application = db.query(Application).filter(
-        Application.id == application_id
+    application = db.query(JobApplication).filter(
+        JobApplication.id == application_id
     ).first()
     
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
     
     # Verify teacher owns the job
-    if application.job.posted_by != current_user.id:
+    if application.job.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Unauthorized")
     
     old_status = application.status
@@ -121,15 +121,15 @@ def add_application_review(
     - Private notes
     - Rejection reason (if applicable)
     """
-    application = db.query(Application).filter(
-        Application.id == application_id
+    application = db.query(JobApplication).filter(
+        JobApplication.id == application_id
     ).first()
     
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
     
     # Verify authorization
-    if application.job.posted_by != current_user.id:
+    if application.job.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Unauthorized")
     
     # Update review fields
@@ -229,7 +229,7 @@ def export_applications_csv(
     """Export applications as CSV data"""
     job = db.query(Job).filter(
         Job.id == job_id,
-        Job.posted_by == current_user.id
+        Job.teacher_id == current_user.id
     ).first()
     
     if not job:
@@ -242,13 +242,13 @@ def export_applications_csv(
     csv_data = []
     for app in applications:
         csv_data.append({
-            'Applicant Name': app.student.full_name,
+            'Applicant Name': f"{app.student.first_name} {app.student.last_name}",
             'Email': app.student.email,
             'Resume Score': app.overall_match_score,
             'Skill Match %': app.skill_match_score,
             'Applied Date': app.applied_at.strftime('%Y-%m-%d'),
-            'Status': app.status.value,
-            'Teacher Rating': app.teacher_rating or 'N/A',
+            'Status': app.status if isinstance(app.status, str) else app.status.value,
+            'Teacher Rating': 'N/A', # Field removed or changed
             'Notes': app.teacher_notes or ''
         })
     
@@ -259,7 +259,7 @@ def export_applications_csv(
     }
 
 
-def _queue_status_notification(db: Session, application: Application, old_status: ApplicationStatus, new_status: ApplicationStatus):
+def _queue_status_notification(db: Session, application: JobApplication, old_status: str, new_status: str):
     """Queue email notification for status change"""
     student = application.student
     job = application.job

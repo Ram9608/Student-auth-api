@@ -32,7 +32,7 @@ class OpenAIProvider(BaseAIProvider):
 class GeminiProvider(BaseAIProvider):
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-pro')
+        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
     def generate_response(self, message: str) -> str:
         try:

@@ -38,12 +38,26 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
+    except Exception as e:
+        print(f"❌ Login Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
+
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    print(f"DEBUG: Login attempt for {form_data.username}")
     try:
         # Fetch user
         user = crud_user.get_user_by_email(db, email=form_data.username)
-        if not user or not verify_password(form_data.password, user.hashed_password):
+        if not user:
+            print(f"DEBUG: Login failed - User not found: {form_data.username}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        if not verify_password(form_data.password, user.hashed_password):
+            print(f"DEBUG: Login failed - Invalid password for: {form_data.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
@@ -51,6 +65,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             )
         
         if not user.is_active:
+            print(f"DEBUG: Login failed - Inactive user: {form_data.username}")
             raise HTTPException(status_code=400, detail="Inactive user")
 
         # Create token
@@ -86,6 +101,8 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)
             print(f"Password reset email sent to: {user.email}")
         else:
             print(f"⚠️  Email sending failed. Reset link: {reset_link}")
+    else:
+        print(f"DEBUG: Forgot password - User not found: {request.email}")
     
     # Always return same message for security
     return {

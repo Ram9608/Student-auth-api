@@ -6,10 +6,10 @@ from collections import Counter
 import statistics
 
 from app.models.enhanced_models import (
-    Application, ResumeVersion, CourseProgress, 
-    RecommendationLog, TeacherAnalytics, ApplicationStatus
+    ResumeVersion, CourseProgress, 
+    RecommendationLog, TeacherAnalytics
 )
-from app.models import User, Job
+from app.models import User, Job, JobApplication
 
 
 class StudentAnalyticsService:
@@ -372,12 +372,12 @@ class TeacherAnalyticsService:
     def calculate_teacher_metrics(db: Session, teacher_id: int) -> Dict:
         """Calculate comprehensive teacher analytics"""
         # Get all jobs posted by teacher
-        jobs = db.query(Job).filter(Job.posted_by == teacher_id).all()
+        jobs = db.query(Job).filter(Job.teacher_id == teacher_id).all()
         job_ids = [job.id for job in jobs]
         
         # Get all applications
-        applications = db.query(Application).filter(
-            Application.job_id.in_(job_ids)
+        applications = db.query(JobApplication).filter(
+            JobApplication.job_id.in_(job_ids)
         ).all()
         
         # Calculate metrics
@@ -414,8 +414,8 @@ class TeacherAnalyticsService:
     @staticmethod
     def rank_applicants(db: Session, job_id: int) -> List[Dict]:
         """Rank applicants for a job with explanations"""
-        applications = db.query(Application).filter(
-            Application.job_id == job_id
+        applications = db.query(JobApplication).filter(
+            JobApplication.job_id == job_id
         ).all()
         
         ranked = []
@@ -445,13 +445,13 @@ class TeacherAnalyticsService:
             ranked.append({
                 'application_id': app.id,
                 'student_id': student.id,
-                'student_name': student.full_name,
+                'student_name': f"{student.first_name} {student.last_name}",
                 'student_email': student.email,
                 'ranking_score': round(ranking_score, 1),
                 'skill_match': app.skill_match_score,
                 'overall_match': app.overall_match_score,
                 'courses_completed': completed_courses,
-                'status': app.status.value,
+                'status': app.status if isinstance(app.status, str) else app.status.value,
                 'explanation': f"Matches {app.skill_match_score}% of required skills. Completed {completed_courses} relevant courses. Overall fit: {app.overall_match_score}%"
             })
         

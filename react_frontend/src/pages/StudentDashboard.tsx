@@ -243,13 +243,17 @@ const StudentDashboard = () => {
                 return;
             }
 
-            const res = await api.post(`/jobs/${jobId}/apply`);
+            const res = await api.post(`/student/jobs/${jobId}/apply`);
             toast.success(`Successfully applied to ${jobTitle}! 🎉`);
 
             // Show match score if available
             if (res.data?.match_score) {
                 toast.success(`Your match score: ${res.data.match_score}%`, { duration: 4000 });
             }
+
+            // 🚀 Refresh applications and courses
+            fetchMyApplications();
+            fetchCourses();
         } catch (err: any) {
             const errorMsg = err.response?.data?.detail || 'Failed to apply';
             if (errorMsg.includes('already applied')) {
@@ -702,7 +706,11 @@ const StudentDashboard = () => {
                 <div className="glass-panel">
                     <h2 style={{ marginBottom: '1.5rem' }}>My Courses</h2>
                     {courses.length === 0 ? (
-                        <p className="text-center" style={{ padding: '2rem', color: 'var(--text-secondary)' }}>No courses in progress. Complete an "Analyze Fit" to see recommended courses!</p>
+                        <div className="text-center" style={{ padding: '3rem', color: 'var(--text-secondary)' }}>
+                            <BookOpen size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                            <p>No courses in progress.</p>
+                            <p style={{ fontSize: '0.9rem' }}>Go to <b>"For You"</b>, click <b>"Analyze Fit"</b>, and then <b>"Start"</b> on any recommended course!</p>
+                        </div>
                     ) : (
                         <div style={{ display: 'grid', gap: '1rem' }}>
                             {courses.map(course => (

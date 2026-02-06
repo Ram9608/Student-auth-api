@@ -4,11 +4,11 @@ from typing import List, Optional
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.security import get_current_user, get_current_teacher
-from app.models import User
+from app.routers.deps import get_current_user, get_current_teacher
+from app.models import User, JobApplication
 from app.models.enhanced_models import (
-    Application, ResumeVersion, CourseProgress,
-    RecommendationLog, ApplicationStatus, CourseStatus
+    ResumeVersion, CourseProgress,
+    RecommendationLog, CourseStatus
 )
 from app.services.analytics_service import (
     StudentAnalyticsService, JobMatchingService,
@@ -291,9 +291,9 @@ def get_my_applications(
     db: Session = Depends(get_db)
 ):
     """Get all applications with status tracking"""
-    applications = db.query(Application).filter(
-        Application.student_id == current_user.id
-    ).order_by(Application.applied_at.desc()).all()
+    applications = db.query(JobApplication).filter(
+        JobApplication.student_id == current_user.id
+    ).order_by(JobApplication.applied_at.desc()).all()
     
     return [
         {
@@ -301,12 +301,13 @@ def get_my_applications(
             'job_id': app.job_id,
             'job_title': app.job.title,
             'company': app.job.company,
-            'status': app.status.value,
+            'status': app.status,
             'applied_at': app.applied_at,
             'viewed_at': app.viewed_at,
             'updated_at': app.updated_at,
             'skill_match_score': app.skill_match_score,
-            'overall_match_score': app.overall_match_score
+            'overall_match_score': app.overall_match_score,
+            'rejection_reason': app.rejection_reason
         }
         for app in applications
     ]
@@ -327,9 +328,9 @@ def apply_to_job(
         raise HTTPException(status_code=404, detail="Job not found")
     
     # Check if already applied
-    existing = db.query(Application).filter(
-        Application.student_id == current_user.id,
-        Application.job_id == job_id
+    existing = db.query(JobApplication).filter(
+        JobApplication.student_id == current_user.id,
+        JobApplication.job_id == job_id
     ).first()
     
     if existing:
@@ -339,10 +340,10 @@ def apply_to_job(
     match_data = JobMatchingService.calculate_match_breakdown(current_user, job)
     
     # Create application
-    application = Application(
+    application = JobApplication(
         student_id=current_user.id,
         job_id=job_id,
-        status=ApplicationStatus.APPLIED,
+        status="applied",
         skill_match_score=match_data['skill_match_percentage'],
         experience_match_score=match_data['experience_match_percentage'],
         overall_match_score=match_data['final_match_score']

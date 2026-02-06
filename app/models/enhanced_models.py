@@ -16,31 +16,7 @@ class CourseStatus(str, enum.Enum):
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
 
-# Application Model
-class Application(Base):
-    __tablename__ = "applications"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    job_id = Column(Integer, ForeignKey("jobs.id"), nullable=False)
-    status = Column(Enum(ApplicationStatus), default=ApplicationStatus.APPLIED)
-    applied_at = Column(DateTime, default=datetime.utcnow)
-    viewed_at = Column(DateTime, nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Teacher feedback
-    teacher_rating = Column(Integer, nullable=True)  # 1-5
-    teacher_notes = Column(Text, nullable=True)
-    rejection_reason = Column(String(500), nullable=True)
-    
-    # Match scores (calculated at application time)
-    skill_match_score = Column(Float, nullable=True)
-    experience_match_score = Column(Float, nullable=True)
-    overall_match_score = Column(Float, nullable=True)
-    
-    # Relationships
-    student = relationship("User", foreign_keys=[student_id])
-    job = relationship("Job", back_populates="applications")
+# Application Model moved to app/models/application.py as JobApplication
 
 # Resume Version Model
 class ResumeVersion(Base):

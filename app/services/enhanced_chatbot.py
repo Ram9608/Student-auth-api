@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 from sqlalchemy.orm import Session
-from app.models import User
-from app.models.enhanced_models import Application, CourseProgress, RecommendationLog
+from app.models import User, JobApplication
+from app.models.enhanced_models import CourseProgress, RecommendationLog
 from app.services.chatbot import ChatbotService as BaseChatbotService
 
 
@@ -50,9 +50,9 @@ Instructions: Answer the student's question using their actual profile data. Be 
         context_parts = []
         
         # Basic profile
-        context_parts.append(f"Name: {user.full_name}")
+        context_parts.append(f"Name: {user.first_name} {user.last_name}")
         context_parts.append(f"Email: {user.email}")
-        context_parts.append(f"Desired Role: {user.desired_role or 'Not specified'}")
+        context_parts.append(f"Desired Role: {user.desired_role if hasattr(user, 'desired_role') else 'Not specified'}")
         
         # Skills
         skills = user.skills or []
@@ -67,20 +67,20 @@ Instructions: Answer the student's question using their actual profile data. Be 
         context_parts.append(f"Education Entries: {education_count}")
         
         # Recent applications
-        recent_applications = db.query(Application).filter(
-            Application.student_id == user.id
-        ).order_by(Application.applied_at.desc()).limit(5).all()
+        recent_applications = db.query(JobApplication).filter(
+            JobApplication.student_id == user.id
+        ).order_by(JobApplication.applied_at.desc()).limit(5).all()
         
         if recent_applications:
             context_parts.append("\nRecent Job Applications:")
             for app in recent_applications:
-                status_info = f"{app.job.title} at {app.job.company} - Status: {app.status.value}"
+                status_info = f"{app.job.title} at {app.job.company} - Status: {app.status if isinstance(app.status, str) else app.status.value}"
                 if app.overall_match_score:
                     status_info += f" (Match: {app.overall_match_score}%)"
                 context_parts.append(f"  - {status_info}")
         
         # Rejected applications with reasons
-        rejected_apps = [app for app in recent_applications if app.status.value == 'rejected']
+        rejected_apps = [app for app in recent_applications if (app.status == 'rejected' if isinstance(app.status, str) else app.status.value == 'rejected')]
         if rejected_apps:
             context_parts.append("\nRejected Applications:")
             for app in rejected_apps:
