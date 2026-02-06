@@ -39,6 +39,8 @@ A production-ready Full-Stack application featuring **JWT Authentication**, **Ro
 - **Icons**: Lucide-React
 - **State/Auth**: React Context API + Axios Interceptors
 - **Animations**: Framer Motion
+- **UI/UX**: Premium Dark-Themed Glassmorphism Interface
+
 
 ## 📦 Installation & Setup
 
