@@ -102,4 +102,4 @@ A production-ready Full-Stack application featuring **JWT Authentication**, **Ro
 Sensitive information like `.env` and `auth.db` are excluded from Git. Ensure you use environment variables for production secrets.
 
 ## 📝 License
-MIT License. Created by [Ram9608](https://github.com/Ram9608).
+MIT License. Created by Ram Bhajan Sahu.
