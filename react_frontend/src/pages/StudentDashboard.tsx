@@ -5,6 +5,7 @@ import api from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Briefcase, BookOpen, Star, MapPin, Github, Linkedin, Upload, Plus, Trash2, Globe, DollarSign, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import Chatbot from '../components/Chatbot';
 
 interface Job {
     id: number;
@@ -643,6 +644,7 @@ const StudentDashboard = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            <Chatbot />
         </div>
     );
 };
