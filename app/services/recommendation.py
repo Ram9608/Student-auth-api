@@ -5,10 +5,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy.orm import Session
 from app.models.job import Job
 from app.models.student import StudentProfile
+from app.services.internal_job_service import InternalJobService
 
 class RecommendationEngine:
     def __init__(self, db: Session):
         self.db = db
+        self.job_service = InternalJobService(db)
 
     def recommend_jobs(self, student_id: int, top_n: int = 5):
         print(f"DEBUG: Starting recommendations for student_id: {student_id}")
@@ -19,8 +21,8 @@ class RecommendationEngine:
             print("DEBUG: No student profile found.")
             return []
 
-        # 2. Fetch All Jobs
-        jobs = self.db.query(Job).all()
+        # 2. Fetch All Jobs via Internal API
+        jobs = self.job_service.get_all_jobs()
         if not jobs:
             print("DEBUG: No jobs found in database.")
             return []

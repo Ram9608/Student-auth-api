@@ -40,7 +40,7 @@ A comprehensive job portal platform designed specifically for students, powered 
 ### AI Features
 - **Resume Analysis:** NLP-based skill extraction
 - **Job Matching:** Skill-based recommendation engine
-- **Chatbot:** AI-powered career guidance (OpenAI/Gemini)
+- **Chatbot:** AI-powered career guidance (OpenAI/Gemini/Groq)
 - **Course Recommendations:** Skill gap analysis with course suggestions
 
 ## 📦 Installation
@@ -252,7 +252,7 @@ Full API documentation available at: `http://localhost:8000/docs`
   - Location preferences
 
 ### Career Chatbot
-- Powered by OpenAI GPT or Google Gemini
+- Powered by OpenAI GPT, Google Gemini, or Groq Llama 3
 - Provides career guidance
 - Answers skill-related questions
 - Fallback mechanism if API keys not configured

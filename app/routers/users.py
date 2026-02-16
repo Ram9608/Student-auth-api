@@ -4,11 +4,13 @@ from sqlalchemy.orm import Session
 import os
 import shutil
 from app.schemas.user import UserResponse
-from app.schemas.student import StudentProfileResponse, StudentProfileUpdate, StudentProfileCreate
+from app.schemas.student import StudentProfileResponse, StudentProfileUpdate, StudentProfileCreate, ExperienceDetail, EducationDetail
 from app.models.user import User
+from app.models.student import StudentProfile
 from app.routers.deps import get_current_user, RoleChecker
 from app.core.database import get_db
 from app.crud import student as crud_student
+from app.services.pdf_parser import pdf_parser
 
 router = APIRouter(prefix="/student", tags=["Student"])
 
@@ -79,9 +81,37 @@ async def upload_resume(
             crud_student.create_student_profile(db, StudentProfileCreate(), current_user.id)
             db_profile = crud_student.get_student_profile(db, current_user.id)
         
-        # Update specifically the resume_path
-        # Note: StudentProfileUpdate(resume_path=relative_url) creates a schema with only resume_path set
-        crud_student.update_student_profile(db, db_profile, StudentProfileUpdate(resume_path=relative_url))
+        # Parse potential skills from resume
+        extracted_skills = []
+        try:
+            print(f"DEBUG: Attempting to extract text from {file_path}")
+            text = pdf_parser.extract_text(file_path)
+            if text:
+                print(f"DEBUG: Text extracted ({len(text)} chars). Extracting skills via Groq...")
+                extracted_skills = pdf_parser.extract_skills(text)
+                print(f"DEBUG: Extracted Skills: {extracted_skills}")
+        except Exception as e:
+            print(f"WARNING: Resume Parsing Failed: {e}")
+
+        # Update specifically the resume_path and extracted skills
+        update_data = {"resume_path": relative_url}
+        if extracted_skills:
+            # Merge or replace? Let's append unique new skills to existing ones to be safe
+            current_skills = db_profile.skills or []
+            if isinstance(current_skills, str):
+                current_skills = [s.strip() for s in current_skills.split(',') if s.strip()]
+            
+            # Use a set for unique skills (case-insensitive check)
+            existing_lower = {s.lower() for s in current_skills}
+            new_skills = [s for s in extracted_skills if s.lower() not in existing_lower]
+            
+            if new_skills:
+                # Add new skills
+                merged_skills = current_skills + new_skills
+                update_data["skills"] = merged_skills
+                print(f"DEBUG: Merged new skills: {new_skills}")
+
+        crud_student.update_student_profile(db, db_profile, StudentProfileUpdate(**update_data))
         print(f"DEBUG: Database updated with path: {relative_url}")
         
     except Exception as e:

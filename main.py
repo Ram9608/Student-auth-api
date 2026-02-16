@@ -61,7 +61,7 @@ if ENHANCED_FEATURES_ENABLED:
     app.include_router(student_enhanced.router, prefix="/api/v1")
     app.include_router(teacher_enhanced.router, prefix="/api/v1")
     app.include_router(chatbot_enhanced.router, prefix="/api/v1")
-    print("✅ Enhanced features loaded successfully")
+    print("[SUCCESS] Enhanced features loaded successfully")
 
 @app.get("/api/v1/health", tags=["System"])
 def health_check(db: Session = Depends(get_db)):

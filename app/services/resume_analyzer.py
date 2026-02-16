@@ -4,6 +4,7 @@ from app.models.student import StudentProfile
 from app.schemas.resume_analysis import ResumeAnalysisResponse, CourseRecommendation
 import json
 import os
+from app.core.groq import groq_client
 
 # Database of high-quality, free/affordable resources for common skills
 SKILL_RESOURCES = {
@@ -128,14 +129,18 @@ class ResumeAnalyzerService:
         Student Skills: {', '.join(student_skills)}
         Missing Skills: {', '.join(job_skills.difference(student_skills))}
         
-        Provide 3 specific resume improvement tips in JSON format list.
+        Provide 3 specific resume improvement tips.
+        Return ONLY a JSON object with a key "tips" containing a list of strings.
+        Example: {{"tips": ["Tip 1", "Tip 2", "Tip 3"]}}
         """
         
-        # Example of what the LLM *would* return. 
-        # In production, uncomment the OpenAI call below.
-        
-        # return call_openai(prompt)
-        
+        try:
+            result = groq_client.extract_json(prompt)
+            if result and "tips" in result:
+                return result["tips"]
+        except Exception as e:
+            print(f"AI Suggestion Error: {e}")
+            
         return [
             "Tailor your resume headline to mention 'Aspiring " + job_title + "'.",
             "Highlight projects that demonstrate " + (list(job_skills)[0] if job_skills else "relevant skills") + ".",

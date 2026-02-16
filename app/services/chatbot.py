@@ -2,9 +2,9 @@ import os
 import re
 from abc import ABC, abstractmethod
 from typing import Optional
-import google.generativeai as genai
 import openai
 from app.core.config import settings
+from app.core.groq import groq_client
 
 class BaseAIProvider(ABC):
     @abstractmethod
@@ -29,17 +29,19 @@ class OpenAIProvider(BaseAIProvider):
             print(f"OpenAI Error: {e}")
             raise e
 
-class GeminiProvider(BaseAIProvider):
-    def __init__(self, api_key: str):
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+class GroqProvider(BaseAIProvider):
+    def __init__(self):
+        self.client = groq_client
 
     def generate_response(self, message: str) -> str:
         try:
-            response = self.model.generate_content(message)
-            return response.text
+            messages = [
+                {"role": "system", "content": "You are a helpful education assistant chatbot. Keep answers short, educational, and polite."},
+                {"role": "user", "content": message}
+            ]
+            return self.client.generate_chat_response(messages)
         except Exception as e:
-            print(f"Gemini Error: {e}")
+            print(f"Groq Error: {e}")
             raise e
 
 class FallbackProvider(BaseAIProvider):
@@ -59,15 +61,16 @@ class ChatbotService:
     def __init__(self):
         # Determine available providers
         self.openai_key = os.getenv("OPENAI_API_KEY")
-        self.gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        self.groq_key = os.getenv("GROQ_API_KEY")
         
         self.providers = {}
         
         if self.openai_key:
             self.providers["openai"] = OpenAIProvider(self.openai_key)
         
-        if self.gemini_key:
-            self.providers["gemini"] = GeminiProvider(self.gemini_key)
+        # Groq client handles its own key check, but we can check existence here for logic
+        if self.groq_key:
+            self.providers["groq"] = GroqProvider()
             
         self.providers["fallback"] = FallbackProvider()
 
@@ -79,14 +82,14 @@ class ChatbotService:
         if preferred_provider == "openai" and "openai" in self.providers:
             provider_name = "openai"
             provider = self.providers["openai"]
-        elif preferred_provider == "gemini" and "gemini" in self.providers:
-            provider_name = "gemini"
-            provider = self.providers["gemini"]
+        elif preferred_provider == "groq" and "groq" in self.providers:
+            provider_name = "groq"
+            provider = self.providers["groq"]
         elif preferred_provider == "auto":
-            # Priority: Gemini (Free Tier available) -> OpenAI -> Fallback
-            if "gemini" in self.providers:
-                provider_name = "gemini"
-                provider = self.providers["gemini"]
+            # Priority: Groq (Fast & Free Tier available) -> OpenAI -> Fallback
+            if "groq" in self.providers:
+                provider_name = "groq"
+                provider = self.providers["groq"]
             elif "openai" in self.providers:
                 provider_name = "openai"
                 provider = self.providers["openai"]
