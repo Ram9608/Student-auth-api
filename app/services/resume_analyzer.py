@@ -56,16 +56,37 @@ class ResumeAnalyzerService:
         # Helper to normalize skills (copied to ensure independence)
         if not skills_data:
             return []
-        if isinstance(skills_data, list):
-            if len(skills_data) == 1:
-                inner = str(skills_data[0])
-                sep = "," if "," in inner else " "
-                return [s.strip().lower() for s in inner.split(sep) if s.strip()]
-            return [str(s).strip().lower() for s in skills_data if s]
-        if isinstance(skills_data, str):
-            sep = "," if "," in skills_data else " "
-            return [s.strip().lower() for s in skills_data.split(sep) if s.strip()]
-        return []
+            
+        normalized = []
+        
+        try:
+            if isinstance(skills_data, list):
+                # Handle list of strings
+                for item in skills_data:
+                    # Handle potential comma-separated strings inside list
+                    if isinstance(item, str) and "," in item:
+                         normalized.extend([s.strip().lower() for s in item.split(",") if s.strip()])
+                    else:
+                        normalized.append(str(item).strip().lower())
+                        
+            elif isinstance(skills_data, str):
+                # Handle string representation of list or comma-separated string
+                clean_str = skills_data.strip()
+                
+                # Remove brackets if it looks like a stringified list
+                if clean_str.startswith("[") and clean_str.endswith("]"):
+                    clean_str = clean_str[1:-1]
+                    
+                # Remove quotes
+                clean_str = clean_str.replace("'", "").replace('"', "")
+                
+                sep = "," if "," in clean_str else " "
+                normalized = [s.strip().lower() for s in clean_str.split(sep) if s.strip()]
+        except Exception as e:
+            print(f"Error normalizing skills: {e}")
+            return []
+            
+        return list(set(normalized)) # Return unique skills
 
     def analyze(self, student_id: int, job_id: int) -> ResumeAnalysisResponse:
         # 1. Fetch Data

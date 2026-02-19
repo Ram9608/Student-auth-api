@@ -49,22 +49,28 @@ Instructions: Answer the student's question using their actual profile data. Be 
         
         context_parts = []
         
+        profile = user.student_profile
+        
         # Basic profile
         context_parts.append(f"Name: {user.first_name} {user.last_name}")
         context_parts.append(f"Email: {user.email}")
-        context_parts.append(f"Desired Role: {user.desired_role if hasattr(user, 'desired_role') else 'Not specified'}")
         
-        # Skills
-        skills = user.skills or []
-        context_parts.append(f"Current Skills ({len(skills)}): {', '.join(skills) if skills else 'None listed'}")
-        
-        # Experience
-        experience_count = len(user.experience or [])
-        context_parts.append(f"Experience Entries: {experience_count}")
-        
-        # Education
-        education_count = len(user.education or [])
-        context_parts.append(f"Education Entries: {education_count}")
+        if profile:
+             context_parts.append(f"Desired Role: {profile.preferred_job_role or 'Not specified'}")
+             
+             # Skills
+             skills = profile.skills or []
+             context_parts.append(f"Current Skills ({len(skills)}): {', '.join(skills) if skills else 'None listed'}")
+             
+             # Experience
+             experience_count = len(profile.experience_details or [])
+             context_parts.append(f"Experience Entries: {experience_count}")
+             
+             # Education
+             education_count = len(profile.education_details or [])
+             context_parts.append(f"Education Entries: {education_count}")
+        else:
+             context_parts.append("Student Profile: Not completed yet.")
         
         # Recent applications
         recent_applications = db.query(JobApplication).filter(

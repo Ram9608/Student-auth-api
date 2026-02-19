@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from typing import List, Optional
 from datetime import datetime
 
@@ -268,10 +269,13 @@ def complete_course(
     course.progress_percentage = 100.0
     
     # Auto-add skill to profile if not present
-    if course.skill and course.skill not in (current_user.skills or []):
-        if not current_user.skills:
-            current_user.skills = []
-        current_user.skills.append(course.skill)
+    profile = current_user.student_profile
+    if profile and course.skill:
+        current_skills = list(profile.skills or [])
+        if course.skill not in current_skills:
+            current_skills.append(course.skill)
+            profile.skills = current_skills
+            flag_modified(profile, "skills")
     
     db.commit()
     

@@ -1,5 +1,6 @@
 
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from app.models.student import StudentProfile
 from app.schemas.student import StudentProfileCreate, StudentProfileUpdate
 
@@ -18,6 +19,8 @@ def update_student_profile(db: Session, db_profile: StudentProfile, profile_upda
     update_data = profile_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_profile, key, value)
+        if key in ["skills", "education_details", "projects", "experience_details"]:
+            flag_modified(db_profile, key)
     db.add(db_profile)
     db.commit()
     db.refresh(db_profile)

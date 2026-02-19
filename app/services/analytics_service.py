@@ -31,13 +31,21 @@ class StudentAnalyticsService:
         """
         score = 0
         details = {}
+        profile = student.student_profile
         
         # Email (always present due to registration)
         score += 10
         details['email'] = True
         
+        if not profile:
+             return {
+                'completion_percentage': score,
+                'details': details,
+                'next_steps': ["Complete your student profile"]
+            }
+
         # Skills
-        skills_count = len(student.skills) if student.skills else 0
+        skills_count = len(profile.skills) if profile.skills else 0
         if skills_count >= 3:
             score += 20
             details['skills'] = True
@@ -46,14 +54,14 @@ class StudentAnalyticsService:
             details['skills_needed'] = 3 - skills_count
         
         # Resume
-        if student.resume_path:
+        if profile.resume_path:
             score += 20
             details['resume'] = True
         else:
             details['resume'] = False
         
         # Education
-        education_count = len(student.education) if student.education else 0
+        education_count = len(profile.education_details) if profile.education_details else 0
         if education_count >= 1:
             score += 15
             details['education'] = True
@@ -61,7 +69,7 @@ class StudentAnalyticsService:
             details['education'] = False
         
         # Experience
-        experience_count = len(student.experience) if student.experience else 0
+        experience_count = len(profile.experience_details) if profile.experience_details else 0
         if experience_count >= 1:
             score += 15
             details['experience'] = True
@@ -70,9 +78,8 @@ class StudentAnalyticsService:
         
         # Social links
         social_count = sum([
-            bool(student.github_url),
-            bool(student.linkedin_url),
-            bool(student.portfolio_url)
+            bool(profile.github_link),
+            bool(profile.linkedin_link)
         ])
         if social_count >= 1:
             score += 10
@@ -80,12 +87,12 @@ class StudentAnalyticsService:
         else:
             details['social_links'] = False
         
-        # Profile picture (if field exists)
-        if hasattr(student, 'profile_picture') and student.profile_picture:
-            score += 10
-            details['profile_picture'] = True
-        else:
-            details['profile_picture'] = False
+        # Profile picture (if field exists - currently not in model, skipping)
+        # if hasattr(student, 'profile_picture') and student.profile_picture:
+        #     score += 10
+        #     details['profile_picture'] = True
+        # else:
+        #     details['profile_picture'] = False
         
         return {
             'completion_percentage': score,
@@ -142,10 +149,18 @@ class StudentAnalyticsService:
             }
         
         # Fallback calculation from profile
-        skill_score = min((len(student.skills or []) / 10) * 40, 40)
-        experience_score = min((len(student.experience or []) / 3) * 30, 30)
-        education_score = min((len(student.education or []) / 2) * 20, 20)
-        extras_score = 10 if student.resume_path else 0
+        profile = student.student_profile
+        
+        if not profile:
+            skill_score = 0
+            experience_score = 0
+            education_score = 0
+            extras_score = 0
+        else:
+            skill_score = min((len(profile.skills or []) / 10) * 40, 40)
+            experience_score = min((len(profile.experience_details or []) / 3) * 30, 30)
+            education_score = min((len(profile.education_details or []) / 2) * 20, 20)
+            extras_score = 10 if profile.resume_path else 0
         
         total = skill_score + experience_score + education_score + extras_score
         
@@ -168,7 +183,8 @@ class StudentAnalyticsService:
         Identify top missing skills based on job market demand
         """
         student = db.query(User).filter(User.id == student_id).first()
-        student_skills = set([s.lower() for s in (student.skills or [])])
+        profile = student.student_profile if student else None
+        student_skills = set([s.lower() for s in (profile.skills or [])]) if profile else set()
         
         # Get all skills from active jobs
         all_jobs = db.query(Job).filter(Job.is_active == True).all()
@@ -202,7 +218,8 @@ class StudentAnalyticsService:
     def get_matched_jobs_count(db: Session, student_id: int) -> int:
         """Count jobs that match student profile (>50% skill match)"""
         student = db.query(User).filter(User.id == student_id).first()
-        student_skills = set([s.lower() for s in (student.skills or [])])
+        profile = student.student_profile if student else None
+        student_skills = set([s.lower() for s in (profile.skills or [])]) if profile else set()
         
         if not student_skills:
             return 0
@@ -239,7 +256,20 @@ class JobMatchingService:
         - explanation
         """
         # Skill Match (60% weight)
-        student_skills = set([s.lower() for s in (student.skills or [])])
+        profile = student.student_profile
+        
+        if not profile:
+             return {
+                'skill_match_percentage': 0,
+                'experience_match_percentage': 0,
+                'role_match_percentage': 0,
+                'final_match_score': 0,
+                'matched_skills': [],
+                'missing_skills': list(set([s.lower() for s in (job.required_skills or [])])),
+                'explanation': "Student profile not found."
+            }
+
+        student_skills = set([s.lower() for s in (profile.skills or [])])
         required_skills = set([s.lower() for s in (job.required_skills or [])])
         
         if required_skills:
@@ -249,7 +279,7 @@ class JobMatchingService:
             skill_match_pct = 100  # No requirements = perfect match
         
         # Experience Match (25% weight)
-        student_exp_years = len(student.experience or [])  # Simplified
+        student_exp_years = len(profile.experience_details or [])  # Simplified
         job_exp_required = JobMatchingService._parse_experience_level(job.experience_level)
         
         if student_exp_years >= job_exp_required:
@@ -262,7 +292,7 @@ class JobMatchingService:
             experience_match_pct = 25
         
         # Role Match (15% weight)
-        student_role = (student.desired_role or "").lower()
+        student_role = (profile.preferred_job_role or "").lower()
         job_title = (job.title or "").lower()
         
         role_match_pct = 100 if student_role in job_title or job_title in student_role else 50

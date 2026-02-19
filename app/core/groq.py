@@ -11,7 +11,7 @@ class GroqClient:
             print("WARNING: GROQ_API_KEY environment variable not set.")
         
         self.client = Groq(api_key=self.api_key)
-        self.model = "llama3-70b-8192"  # Using a capable model
+        self.model = "llama-3.1-8b-instant"  # Using a capable model
 
     def generate_chat_response(self, messages: List[Dict[str, str]], temperature: float = 0.7) -> str:
         """

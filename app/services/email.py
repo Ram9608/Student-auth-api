@@ -244,3 +244,75 @@ def send_welcome_email(recipient_email: str, user_name: str) -> bool:
     except Exception as e:
         print(f"Failed to send welcome email: {str(e)}")
         return False
+
+def send_application_confirmation(recipient_email: str, job_title: str, company_name: str) -> bool:
+    """
+    Send application confirmation email
+    
+    Args:
+        recipient_email: User's email address
+        job_title: Title of the job
+        company_name: Name of the company
+        
+    Returns:
+        bool: True if email sent successfully
+    """
+    try:
+        if not SENDER_EMAIL or not SENDER_PASSWORD:
+            print("Skipping email: SENDER_EMAIL or SENDER_PASSWORD not set")
+            return True
+
+        message = MIMEMultipart("alternative")
+        message["Subject"] = f"Application Received: {job_title} - Student Auth System"
+        message["From"] = f"{SENDER_NAME} <{SENDER_EMAIL}>"
+        message["To"] = recipient_email
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4; color: #333; }}
+                .container {{ max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; }}
+                .header h1 {{ margin: 0; font-size: 24px; }}
+                .content {{ padding: 40px 30px; line-height: 1.6; }}
+                .footer {{ background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 12px; }}
+                .highlight {{ color: #764ba2; font-weight: bold; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Application Received</h1>
+                </div>
+                <div class="content">
+                    <p>Hello,</p>
+                    <p>This is to confirm that we have received your application for the position of <span class="highlight">{job_title}</span> at <span class="highlight">{company_name}</span>.</p>
+                    <p>The hiring team will review your profile and skills match. If you are shortlisted, you will be notified via email.</p>
+                    <p>You can track the status of your application in your student dashboard.</p>
+                    <p>Good luck!</p>
+                </div>
+                <div class="footer">
+                    <p>© 2024 Student Auth System. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        part = MIMEText(html_content, "html")
+        message.attach(part)
+
+        # Send email
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(message)
+        
+        print(f"Application confirmation email sent to: {recipient_email}")
+        return True
+        
+    except Exception as e:
+        print(f"Failed to send application confirmation email: {str(e)}")
+        return False
