@@ -1,0 +1,22 @@
+fastapi            # 📡 Engine: Backend APIs build karne ke liye main framework.
+uvicorn            # ⚡ Server: FastAPI ko run karne ke liye High-Performance server.
+sqlalchemy         # 🗄️ Database ORM: SQL queries ko Python objects me convert ke liye.
+psycopg2-binary    # 🐘 PostgreSQL: Postgres database se connect karne ki library.
+python-jose[cryptography] # 🔑 JWT: Auth tokens create aur decode karne ke liye security logic.
+passlib[bcrypt]    # 🔒 Password Hash: User passwords ko securely hash karne ke liye.
+python-multipart   # 📁 File Upload: Resumes aur photos (vision) server pe bhejne ke liye.
+pydantic-settings  # ⚙️ Config: .env file aur environment variables load karne ke liye.
+pydantic[email]    # 📧 Validation: Email format aur general data types auto-check kar sake.
+python-dotenv      # 🗝️ Env Handler: Backend secrets (.env) files manage karne ki utility.
+groq               # 🤖 AI Chatbot: Groq Cloud API use karke fast AI answers ke liye.
+spacy              # 📚 NLP: Document analysis aur text processing ke liye engine.
+scikit-learn       # 📈 ML Logic: Similarity (Matching) aur recommenders build ke liye.
+opencv-python      # 👁️ Vision: Face detection aur webcam activity tracking (Phase 10).
+numpy              # 🔢 Math Engine: Tables, images (vision) math aur matrix operations.
+pytesseract        # 📝 OCR: Image se text nikalne ke liye library.
+aiosmtplib         # 📩 Emailer: Password reset links (Gmail/SMTP) async send ke liye.
+PyPDF2             # 📄 PDF Parser: Resumes se pura text extract karne ke kaam aata hai.
+scikit-image       # 🖼️ Image Logic: Advanced computer vision aur quality filtering.
+mediapipe          # 🤝 Vision Pro: Google ka lightweight face/pose tracking framework.
+deepface           # 🎭 Face Recognition: ArcFace/FaceNet algorithms direct use ke liye.
+ultralytics        # ⚡ YOLOv8: Objects (Alerts) detect karne ka world's fastest model.
